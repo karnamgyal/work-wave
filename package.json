@@ -1,0 +1,69 @@
+{
+  "name": "coding-buddy-bot",
+  "displayName": "Coding Buddy Bot",
+  "description": "A tiny bot that tracks your coding sessions and provides motivational feedback using computer vision",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "coding-buddy-bot.startSession",
+        "title": "Start Coding Buddy Session",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.stopSession",
+        "title": "Stop Coding Buddy Session",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.toggleCamera",
+        "title": "Toggle Camera",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.showBot",
+        "title": "Show Bot Interface",
+        "category": "Coding Buddy"
+      }
+    ],
+    "statusBar": {
+      "items": [
+        {
+          "id": "coding-buddy-status",
+          "name": "Coding Buddy Status",
+          "alignment": "right",
+          "priority": 100
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "echo 'Tests disabled for development'",
+    "setup": "node scripts/setup.js",
+    "dev": "npm run compile && code ."
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "eslint": "^8.26.0",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {}
+}
