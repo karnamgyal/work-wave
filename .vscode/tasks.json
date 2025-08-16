@@ -1,26 +1,56 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "type": "npm",
-            "script": "compile",
-            "group": "build",
-            "presentation": {
-                "panel": "shared",
-                "reveal": "silent"
-            },
-            "problemMatcher": "$tsc"
-        },
-        {
-            "type": "npm",
-            "script": "watch",
-            "group": "build",
-            "presentation": {
-                "panel": "shared",
-                "reveal": "silent"
-            },
-            "isBackground": true,
-            "problemMatcher": "$tsc-watch"
-        }
-    ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "compile",
+			"group": "build",
+			"presentation": {
+				"panel": "shared",
+				"reveal": "silent"
+			},
+			"problemMatcher": "$tsc"
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"group": "build",
+			"presentation": {
+				"panel": "shared",
+				"reveal": "silent"
+			},
+			"isBackground": true,
+			"problemMatcher": "$tsc-watch"
+		},
+		{
+			"label": "Build extension",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"compile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build extension",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"compile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build extension",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"compile"
+			],
+			"group": "build"
+		}
+	]
 }

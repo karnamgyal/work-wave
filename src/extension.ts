@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
   botInterface = new BotInterface();
 
   // Initialize bulk insert monitor first so we can consult it in callbacks
-  const bulkMonitor = new BulkInsertMonitor();
+  const bulkMonitor = new BulkInsertMonitor(context.extensionPath);
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) =>
       bulkMonitor.handleTextChange(e)
@@ -164,7 +164,15 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(startSession, stopSession, showBot, toggleCamera, testWebcam, openFrameDirectory, captureFrame);
+  context.subscriptions.push(
+    startSession,
+    stopSession,
+    showBot,
+    toggleCamera,
+    testWebcam,
+    openFrameDirectory,
+    captureFrame
+  );
 
   // Removed: AI suggestion tracking test commands
 
