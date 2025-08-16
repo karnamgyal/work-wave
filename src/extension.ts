@@ -21,6 +21,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Initialize bot interface
   botInterface = new BotInterface();
+  
+  // Set bot interface reference in coding buddy bot for emotion updates
+  codingBuddyBot.setBotInterface(botInterface);
 
   // Initialize bulk insert monitor first so we can consult it in callbacks
   const bulkMonitor = new BulkInsertMonitor();
@@ -46,9 +49,14 @@ export function activate(context: vscode.ExtensionContext) {
         quality: currentAnalysis.quality,
       });
     }
-    // Suppress motivational popups if a recent large insert is under review
+    
+    // Handle theme switching for code-based emotions
+    const themeManager = require('./themeManager').ThemeManager.getInstance();
+    themeManager.handleEmotionChange(emotion, 0.8); // High confidence for code-based emotions
+    
+    // Suppress motivational popups if a recent large insert is under review OR if session is not active
     const activeDoc = vscode.window.activeTextEditor?.document;
-    const suppress = bulkMonitor.isInReviewWindow(activeDoc?.uri);
+    const suppress = bulkMonitor.isInReviewWindow(activeDoc?.uri) || !codingBuddyBot.isSessionActive();
     switch (emotion) {
       case "frustrated":
         if (!suppress) {
@@ -91,12 +99,19 @@ export function activate(context: vscode.ExtensionContext) {
       // Start timer to update bot interface every second
       if (sessionTimer) clearInterval(sessionTimer);
       sessionTimer = setInterval(() => {
-        const elapsed = Date.now() - sessionStartTime;
-        botInterface.updateSessionStats(
-          elapsed,
-          codingBuddyBot["breakthroughCount"] || 0,
-          codingBuddyBot["focusTime"] || 0
-        );
+        // Only update stats when there are actual changes, not every second
+        const currentBreakthroughs = codingBuddyBot["breakthroughCount"] || 0;
+        const currentFocusTime = codingBuddyBot["focusTime"] || 0;
+        
+        // Update stats only if there are changes in breakthroughs or focus time
+        if (currentBreakthroughs !== botInterface["breakthroughCount"] || 
+            currentFocusTime !== botInterface["focusTime"]) {
+          botInterface.updateSessionStats(
+            0, // Don't update duration from extension - let webview handle it
+            currentBreakthroughs,
+            currentFocusTime
+          );
+        }
       }, 1000);
     }
   );
@@ -164,7 +179,87 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(startSession, stopSession, showBot, toggleCamera, testWebcam, openFrameDirectory, captureFrame);
+  // Theme switching commands
+  let toggleThemeSwitching = vscode.commands.registerCommand(
+    "coding-buddy-bot.toggleThemeSwitching",
+    () => {
+      const themeManager = require('./themeManager').ThemeManager.getInstance();
+      const isEnabled = themeManager.isThemeSwitchingEnabled();
+      themeManager.setEnabled(!isEnabled);
+    }
+  );
+
+  let resetTheme = vscode.commands.registerCommand(
+    "coding-buddy-bot.resetTheme",
+    async () => {
+      const themeManager = require('./themeManager').ThemeManager.getInstance();
+      await themeManager.resetToDefaultTheme();
+    }
+  );
+
+  let previewTheme = vscode.commands.registerCommand(
+    "coding-buddy-bot.previewTheme",
+    async () => {
+      const emotion = await vscode.window.showQuickPick([
+        'happy', 'focused', 'frustrated', 'confused', 'surprised', 'sad', 'disgusted', 'content'
+      ], {
+        placeHolder: 'Select emotion to preview theme'
+      });
+      if (emotion) {
+        const themeManager = require('./themeManager').ThemeManager.getInstance();
+        await themeManager.previewTheme(emotion);
+      }
+    }
+  );
+
+  let debugEmotionDetection = vscode.commands.registerCommand(
+    "coding-buddy-bot.debugEmotionDetection",
+    async () => {
+      vscode.window.showInformationMessage('🔍 Check the Developer Console (Help → Toggle Developer Tools) to see raw AI detection results!');
+      console.log('🔍 Debug: Check the console above for detailed emotion detection logs');
+      
+      // Show current detection status
+      const currentEmotion = codingBuddyBot.getLastEmotion ? codingBuddyBot.getLastEmotion() : 'Unknown';
+      vscode.window.showInformationMessage(`🎯 Current detected emotion: ${currentEmotion}`);
+    }
+  );
+
+  let testThemeChange = vscode.commands.registerCommand(
+    "coding-buddy-bot.testThemeChange",
+    async () => {
+      const themeManager = require('./themeManager').ThemeManager.getInstance();
+      
+      // Test if theme switching is enabled
+      const isEnabled = themeManager.isThemeSwitchingEnabled();
+      vscode.window.showInformationMessage(`🎨 Theme switching enabled: ${isEnabled}`);
+      
+      // Test current theme
+      const currentTheme = themeManager.getCurrentTheme();
+      vscode.window.showInformationMessage(`🎨 Current theme: ${currentTheme}`);
+      
+      // Test available themes
+      const availableThemes = await vscode.workspace.getConfiguration('workbench').get('colorTheme') as string;
+      console.log('🎨 Available themes:', availableThemes);
+      
+      // Force test a theme change
+      try {
+        await vscode.workspace.getConfiguration('workbench').update('colorTheme', 'High Contrast', vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage('🎨 Test theme change: Switched to High Contrast');
+      } catch (error) {
+        vscode.window.showErrorMessage(`❌ Test theme change failed: ${error}`);
+      }
+    }
+  );
+
+  let toggleMultiModelDetection = vscode.commands.registerCommand(
+    "coding-buddy-bot.toggleMultiModelDetection",
+    () => {
+      const isEnabled = codingBuddyBot.getEmotionDetector ? codingBuddyBot.getEmotionDetector().isMultiModelEnabled() : false;
+      codingBuddyBot.getEmotionDetector ? codingBuddyBot.getEmotionDetector().setMultiModelEnabled(!isEnabled) : null;
+    }
+  );
+
+  context.subscriptions.push(startSession, stopSession, showBot, toggleCamera, testWebcam, openFrameDirectory, captureFrame, toggleThemeSwitching, resetTheme, previewTheme, debugEmotionDetection, testThemeChange, toggleMultiModelDetection);
 
   // Removed: AI suggestion tracking test commands
 

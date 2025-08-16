@@ -49,6 +49,36 @@
         "command": "coding-buddy-bot.captureFrame",
         "title": "Capture Frame & Detect Emotion",
         "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.toggleThemeSwitching",
+        "title": "Toggle Mood-Based Theme Switching",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.resetTheme",
+        "title": "Reset Theme to Default",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.previewTheme",
+        "title": "Preview Theme for Emotion",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.debugEmotionDetection",
+        "title": "Debug Emotion Detection",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.testThemeChange",
+        "title": "Test Theme Change",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.toggleMultiModelDetection",
+        "title": "Toggle Multi-Model Emotion Detection",
+        "category": "Coding Buddy"
       }
     ],
     "statusBar": {

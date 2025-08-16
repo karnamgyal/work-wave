@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { WebcamManager } from './webcamManager';
 import { RoboflowEmotionDetector } from './roboflowEmotionDetector';
+import { MultiModelEmotionDetector } from './multiModelEmotionDetector';
 
 // Note: We'll use a simplified approach with face-api for emotion detection
 // In a production environment, you might want to use more sophisticated models
@@ -26,12 +27,15 @@ export class EmotionDetector {
     private webcamManager: WebcamManager;
     private saveFrames: boolean = true; // Always save frames when webcam is active
     private roboflowDetector: RoboflowEmotionDetector;
+    private multiModelDetector: MultiModelEmotionDetector;
     private useRoboflow: boolean = true;
+    private useMultiModel: boolean = true; // Enable multi-model detection
 
     constructor() {
         this.webcamManager = WebcamManager.getInstance();
         this.roboflowDetector = new RoboflowEmotionDetector();
-        console.log('EmotionDetector initialized with Roboflow emotion detection');
+        this.multiModelDetector = new MultiModelEmotionDetector();
+        console.log('EmotionDetector initialized with Roboflow and Multi-Model emotion detection');
     }
 
     public async startDetection(callback: (emotion: string, confidence: number) => void): Promise<void> {
@@ -437,6 +441,20 @@ export class EmotionDetector {
     // Method to get the temp directory path
     public getTempDirectory(): string {
         return this.webcamManager.getTempDir();
+    }
+
+    // Method to toggle multi-model detection
+    public setMultiModelEnabled(enabled: boolean): void {
+        this.useMultiModel = enabled;
+        if (enabled) {
+            vscode.window.showInformationMessage('🎯 Multi-model emotion detection enabled! Using 5 models for better accuracy.');
+        } else {
+            vscode.window.showInformationMessage('🎯 Single-model emotion detection enabled (Roboflow only).');
+        }
+    }
+
+    public isMultiModelEnabled(): boolean {
+        return this.useMultiModel;
     }
 
     // Method to open the temp directory in Finder

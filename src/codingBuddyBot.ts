@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { EmotionDetector } from './emotionDetector';
 import { MotivationalFeedback } from './motivationalFeedback';
 import { HealthMonitor } from './healthMonitor';
+import { ThemeManager } from './themeManager';
 
 export class CodingBuddyBot {
     private emotionDetector: EmotionDetector;
@@ -15,11 +16,15 @@ export class CodingBuddyBot {
     private focusTime: number = 0;
     private frustrationTime: number = 0;
     private breakthroughCount: number = 0;
+    private botInterface: any = null; // Reference to bot interface for emotion updates
+    private themeManager: ThemeManager;
+    private lastEmotion: string = 'unknown';
 
     constructor() {
         this.emotionDetector = new EmotionDetector();
         this.motivationalFeedback = new MotivationalFeedback();
         this.healthMonitor = new HealthMonitor();
+        this.themeManager = ThemeManager.getInstance();
     }
 
     public async startSession(): Promise<void> {
@@ -80,6 +85,18 @@ export class CodingBuddyBot {
 
     public getCameraActive(): boolean {
         return this.isCameraActive;
+    }
+
+    public getLastEmotion(): string {
+        return this.lastEmotion || 'unknown';
+    }
+
+    public getEmotionDetector(): any {
+        return this.emotionDetector;
+    }
+
+    public setBotInterface(botInterface: any): void {
+        this.botInterface = botInterface;
     }
 
     public async testWebcam(): Promise<void> {
@@ -146,8 +163,8 @@ export class CodingBuddyBot {
     private handleEmotionChange(emotion: string, confidence: number): void {
         console.log(`[ROBOFLOW] Emotion detected: ${emotion} (confidence: ${Math.round(confidence * 100)}%)`);
         
-        // Only show notifications for high-confidence detections to avoid spam
-        if (confidence > 0.3) { // 30% confidence threshold
+        // Only show notifications for high-confidence detections AND when session is active
+        if (confidence > 0.3 && this.isActive) { // 30% confidence threshold + active session
             switch (emotion) {
                 case 'happy':
                     vscode.window.showInformationMessage(`😊 I can see you're happy! Your positive energy is contagious! (${Math.round(confidence * 100)}% confidence)`);
@@ -172,14 +189,27 @@ export class CodingBuddyBot {
         // Update emotion tracking
         this.lastEmotionTime = Date.now();
         this.emotionChangeCount++;
+        this.lastEmotion = emotion; // Track the last detected emotion
         
         // Track focus time
         if (emotion === 'focused') {
             this.focusTime += 5000; // Add 5 seconds (detection interval)
         }
+        
+        // Update bot interface with Roboflow emotion detection
+        if (this.botInterface && confidence > 0.3) {
+            const reason = `Detected via camera (${Math.round(confidence * 100)}% confidence)`;
+            this.botInterface.updateEmotion(emotion, reason);
+        }
+
+        // Handle theme switching based on emotion
+        this.themeManager.handleEmotionChange(emotion, confidence);
     }
 
     private showBreakthroughMessage(): void {
+        // Only show breakthrough messages when session is active
+        if (!this.isActive) return;
+        
         const messages = [
             "🎉 BREAKTHROUGH ALERT! You just solved something that was puzzling you! That's elite problem-solving energy!",
             "🚀 BOOM! You just leveled up your understanding! I saw that lightbulb moment!",
@@ -193,6 +223,9 @@ export class CodingBuddyBot {
     }
 
     private showEncouragementMessage(): void {
+        // Only show encouragement messages when session is active
+        if (!this.isActive) return;
+        
         const messages = [
             "💪 Hey, I see you're working through something challenging. That's exactly how you grow! Take a deep breath.",
             "🧠 Stuck on something? That's your brain building new neural pathways. You're getting smarter!",
@@ -206,8 +239,8 @@ export class CodingBuddyBot {
     }
 
     private provideRealTimeFeedback(emotion: string, confidence: number): void {
-        // Only provide feedback occasionally to avoid spam
-        if (Math.random() > 0.1) {
+        // Only provide feedback occasionally to avoid spam AND when session is active
+        if (Math.random() > 0.02 || !this.isActive) { // Reduced to 2% chance (much less frequent)
             return;
         }
 

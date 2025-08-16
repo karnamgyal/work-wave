@@ -472,10 +472,15 @@ export class CodeAnalyzer {
     let reason: string;
 
     if (result.hasErrors) {
-      emotion = "frustrated";
-      reason = `Found ${result.errorCount} syntax error(s) in ${path.basename(
-        fileName
-      )}`;
+      if (result.errorCount > 1) {
+        emotion = "frustrated";
+        reason = `Multiple errors detected (${result.errorCount} errors) - debugging time!`;
+      } else {
+        emotion = "focused";
+        reason = `Found ${result.errorCount} syntax error in ${path.basename(
+          fileName
+        )} - let's fix it!`;
+      }
     } else if (result.lineCount === 0) {
       emotion = "happy";
       reason = "Empty file - ready to start coding!";
