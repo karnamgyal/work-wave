@@ -126,11 +126,11 @@ export class EmotionDetector {
     private async initializeWebcam(): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // Configure webcam options (cross-platform)
+                // Configure webcam options (cross-platform, optimized for API limits)
                 const options = {
-                    width: 640,
-                    height: 480,
-                    quality: 100,
+                    width: 320,  // Reduced from 640 for smaller file size
+                    height: 240, // Reduced from 480 for smaller file size
+                    quality: 70,  // Reduced from 100 for smaller file size
                     delay: 0,
                     saveShots: true,
                     output: 'jpeg',
@@ -213,6 +213,14 @@ export class EmotionDetector {
                     
                     const fileStats = fs.statSync(tempFilePath);
                     console.log(`🔍 Debug: Captured file size: ${fileStats.size} bytes`);
+                    
+                    // Check if file is too large for Roboflow API (limit is ~10MB)
+                    const maxFileSize = 8 * 1024 * 1024; // 8MB limit
+                    if (fileStats.size > maxFileSize) {
+                        console.error(`❌ ERROR: File too large (${fileStats.size} bytes) for Roboflow API. Max size: ${maxFileSize} bytes`);
+                        reject(new Error(`Captured image too large (${Math.round(fileStats.size / 1024 / 1024)}MB). Try reducing webcam quality.`));
+                        return;
+                    }
                     
                     // Read the captured file as buffer (tempFilePath is already defined above)
                     const imageBuffer = fs.readFileSync(tempFilePath);

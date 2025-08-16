@@ -131,11 +131,13 @@ export class WebcamManager {
             const options = {
                 width: 320,
                 height: 240,
-                quality: 100,
+                quality: 70,  // Reduced for smaller file size
                 delay: 0,
                 saveShots: true,
                 output: 'jpeg',
-                device: false
+                device: false,
+                skipScreenshots: true,
+                verbose: false
             };
 
             const webcam = NodeWebcam.create(options);
