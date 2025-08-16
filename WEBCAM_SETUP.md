@@ -4,17 +4,31 @@
 
 ### 1. Install Required Dependencies
 
-On macOS, you need to install `imagesnap` for webcam access:
-
+**macOS**: Install `imagesnap` for webcam access:
 ```bash
 brew install imagesnap
 ```
 
+**Windows**: No additional dependencies required! The extension uses `node-webcam` which works natively on Windows.
+
+**Linux**: No additional dependencies required! The extension uses `node-webcam` which works natively on Linux.
+
 ### 2. Grant Camera Permissions
 
+**macOS**:
 1. Open **System Preferences** → **Security & Privacy** → **Camera**
 2. Make sure **Visual Studio Code** is checked/enabled
 3. If VS Code is not listed, try running the extension first and it will prompt for permissions
+
+**Windows**:
+1. Open **Windows Settings** → **Privacy & Security** → **Camera**
+2. Make sure **Camera access** is turned **On**
+3. Under **Let apps access your camera**, make sure **Visual Studio Code** is enabled
+4. If VS Code is not listed, try running the extension first and it will prompt for permissions
+
+**Linux**:
+- Camera permissions are typically handled automatically
+- If prompted, allow VS Code to access your camera
 
 ## Testing Your Webcam
 
@@ -24,17 +38,30 @@ brew install imagesnap
 3. Click the command to test
 
 ### Method 2: Manual Test
-Run this command in your terminal:
+
+**macOS**:
 ```bash
 imagesnap -w 1 test.jpg
 ```
 
-If successful, you should see a `test.jpg` file created.
+**Windows/Linux**: Use the extension's built-in test command instead:
+1. Open VS Code Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "Coding Buddy: Test Webcam"
+3. Click the command to test
+
+If successful, you should see a test image file created.
 
 ## Troubleshooting
 
-### Issue: "imagesnap: command not found"
+### Issue: "imagesnap: command not found" (macOS only)
 **Solution**: Install imagesnap with `brew install imagesnap`
+
+### Issue: "Webcam not accessible" (Windows)
+**Solutions**:
+1. Make sure no other app is using the camera
+2. Check if your camera is working in other applications (like Camera app)
+3. Try restarting your computer
+4. Check Windows Camera privacy settings
 
 ### Issue: "Camera permission denied"
 **Solution**: 
@@ -56,17 +83,17 @@ If successful, you should see a `test.jpg` file created.
 
 ## Using the Extension
 
-1. **Start a Session**: `Cmd+Shift+P` → "Coding Buddy: Start Coding Buddy Session"
-2. **Enable Camera**: `Cmd+Shift+P` → "Coding Buddy: Toggle Camera"
-3. **Test Webcam**: `Cmd+Shift+P` → "Coding Buddy: Test Webcam"
+1. **Start a Session**: `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) → "Coding Buddy: Start Coding Buddy Session"
+2. **Enable Camera**: `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) → "Coding Buddy: Toggle Camera"
+3. **Test Webcam**: `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) → "Coding Buddy: Test Webcam"
 
 ## Viewing Captured Frames
 
 Frames are automatically saved when the webcam is active!
 
 1. **Start a session and enable camera** (frames will be saved every 5 seconds automatically)
-2. **Open Frame Directory**: `Cmd+Shift+P` → "Coding Buddy: Open Frame Directory"
-3. **View the captured images** in the opened Finder window
+2. **Open Frame Directory**: `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) → "Coding Buddy: Open Frame Directory"
+3. **View the captured images** in the opened file explorer window
 
 **Note**: Frames are saved automatically when the camera is on. You'll get a notification when the first frame is captured.
 

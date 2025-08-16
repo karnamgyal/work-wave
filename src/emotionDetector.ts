@@ -126,7 +126,7 @@ export class EmotionDetector {
     private async initializeWebcam(): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // Configure webcam options
+                // Configure webcam options (cross-platform)
                 const options = {
                     width: 640,
                     height: 480,
@@ -135,7 +135,10 @@ export class EmotionDetector {
                     saveShots: true,
                     output: 'jpeg',
                     device: false, // Use default device
-                    callbackReturn: 'buffer'
+                    callbackReturn: 'buffer',
+                    // Windows-specific options for better compatibility
+                    skipScreenshots: true,
+                    verbose: false
                 };
 
                 this.webcam = NodeWebcam.create(options);
