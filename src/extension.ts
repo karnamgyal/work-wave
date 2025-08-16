@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
   codingBuddyBot.setBotInterface(botInterface);
 
   // Initialize bulk insert monitor first so we can consult it in callbacks
-  const bulkMonitor = new BulkInsertMonitor();
+  const bulkMonitor = new BulkInsertMonitor(context.extensionPath);
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) =>
       bulkMonitor.handleTextChange(e)
@@ -39,7 +39,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize code analyzer
   codeAnalyzer = new CodeAnalyzer();
   codeAnalyzer.setEmotionCallback((emotion, reason) => {
-    console.log(`[EXTENSION] Emotion callback triggered: ${emotion}, reason: ${reason}`);
+    console.log(
+      `[EXTENSION] Emotion callback triggered: ${emotion}, reason: ${reason}`
+    );
     botInterface.updateEmotion(emotion, reason);
 
     const currentAnalysis = codeAnalyzer.getCurrentAnalysis();
@@ -65,12 +67,16 @@ export function activate(context: vscode.ExtensionContext) {
     switch (emotion) {
       case "frustrated":
         if (!suppress) {
-          vscode.window.showInformationMessage(`😤 ${reason} - Don't worry, debugging is part of the journey! 💪`);
+          vscode.window.showInformationMessage(
+            `😤 ${reason} - Don't worry, debugging is part of the journey! 💪`
+          );
         }
         break;
       case "happy":
         if (!suppress) {
-          vscode.window.showInformationMessage(`😊 ${reason} - You're on fire! 🔥`);
+          vscode.window.showInformationMessage(
+            `😊 ${reason} - You're on fire! 🔥`
+          );
         }
         break;
     }
@@ -100,7 +106,9 @@ export function activate(context: vscode.ExtensionContext) {
 
       codingBuddyBot.startSession();
       statusBarManager.updateStatus("🟢 Active");
-      vscode.window.showInformationMessage("🚀 Coding Buddy Bot session started! Let's code together!");
+      vscode.window.showInformationMessage(
+        "🚀 Coding Buddy Bot session started! Let's code together!"
+      );
       sessionStartTime = Date.now();
 
       // Start timer + water reminders in your webview
@@ -110,7 +118,8 @@ export function activate(context: vscode.ExtensionContext) {
       // Update bot interface (only when values change)
       if (sessionTimer) clearInterval(sessionTimer);
       sessionTimer = setInterval(() => {
-        const currentBreakthroughs = (codingBuddyBot as any)["breakthroughCount"] || 0;
+        const currentBreakthroughs =
+          (codingBuddyBot as any)["breakthroughCount"] || 0;
         const currentFocusTime = (codingBuddyBot as any)["focusTime"] || 0;
 
         if (
@@ -118,7 +127,11 @@ export function activate(context: vscode.ExtensionContext) {
           currentFocusTime !== lastFocusTime
         ) {
           // Let the webview own the visible clock; we only push counts here
-          botInterface.updateSessionStats(0, currentBreakthroughs, currentFocusTime);
+          botInterface.updateSessionStats(
+            0,
+            currentBreakthroughs,
+            currentFocusTime
+          );
           lastBreakthroughs = currentBreakthroughs;
           lastFocusTime = currentFocusTime;
         }
@@ -132,7 +145,9 @@ export function activate(context: vscode.ExtensionContext) {
     () => {
       codingBuddyBot.stopSession();
       statusBarManager.updateStatus("🔴 Inactive");
-      vscode.window.showInformationMessage("👋 Coding Buddy Bot session ended. Great work today!");
+      vscode.window.showInformationMessage(
+        "👋 Coding Buddy Bot session ended. Great work today!"
+      );
 
       // Stop timer and water reminders
       botInterface.stopTimer();
@@ -192,6 +207,21 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  context.subscriptions.push(
+    startSession,
+    stopSession,
+    showBot,
+    toggleCamera,
+    testWebcam,
+    openFrameDirectory,
+    captureFrame
+  );
+
+  // Removed: AI suggestion tracking test commands
+
+  // bulkMonitor already set up above
+
+  // Set initial status
   // ---- Badge history commands (status bar button calls Quick Pick)
   const showBadgeQuickPick = vscode.commands.registerCommand(
     "coding-buddy-bot.showBadgeQuickPick",
@@ -238,7 +268,8 @@ export function activate(context: vscode.ExtensionContext) {
         { placeHolder: "Select emotion to preview theme" }
       );
       if (emotion) {
-        const themeManager = require("./themeManager").ThemeManager.getInstance();
+        const themeManager =
+          require("./themeManager").ThemeManager.getInstance();
         await themeManager.previewTheme(emotion);
       }
     }
@@ -250,12 +281,16 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         "🔍 Check the Developer Console (Help → Toggle Developer Tools) to see raw AI detection results!"
       );
-      console.log("🔍 Debug: Check the console above for detailed emotion detection logs");
+      console.log(
+        "🔍 Debug: Check the console above for detailed emotion detection logs"
+      );
 
       const currentEmotion = codingBuddyBot.getLastEmotion
         ? codingBuddyBot.getLastEmotion()
         : "Unknown";
-      vscode.window.showInformationMessage(`🎯 Current detected emotion: ${currentEmotion}`);
+      vscode.window.showInformationMessage(
+        `🎯 Current detected emotion: ${currentEmotion}`
+      );
     }
   );
 
@@ -266,7 +301,9 @@ export function activate(context: vscode.ExtensionContext) {
 
       // Test if theme switching is enabled
       const isEnabled = themeManager.isThemeSwitchingEnabled();
-      vscode.window.showInformationMessage(`🎨 Theme switching enabled: ${isEnabled}`);
+      vscode.window.showInformationMessage(
+        `🎨 Theme switching enabled: ${isEnabled}`
+      );
 
       // Test current theme
       const currentTheme = themeManager.getCurrentTheme();
@@ -276,8 +313,14 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         await vscode.workspace
           .getConfiguration("workbench")
-          .update("colorTheme", "High Contrast", vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage("🎨 Test theme change: Switched to High Contrast");
+          .update(
+            "colorTheme",
+            "High Contrast",
+            vscode.ConfigurationTarget.Global
+          );
+        vscode.window.showInformationMessage(
+          "🎨 Test theme change: Switched to High Contrast"
+        );
       } catch (error) {
         vscode.window.showErrorMessage(`❌ Test theme change failed: ${error}`);
       }
@@ -331,14 +374,18 @@ function startHealthReminders() {
   // Remind to take breaks every 50 minutes
   setInterval(() => {
     if (codingBuddyBot && codingBuddyBot.isSessionActive()) {
-      vscode.window.showInformationMessage("💡 Time for a quick break! Stretch those fingers and grab some water!");
+      vscode.window.showInformationMessage(
+        "💡 Time for a quick break! Stretch those fingers and grab some water!"
+      );
     }
   }, 50 * 60 * 1000);
 
   // Remind to blink every 20 minutes
   setInterval(() => {
     if (codingBuddyBot && codingBuddyBot.isSessionActive()) {
-      vscode.window.showInformationMessage("👁️ Remember to blink! Your eyes need a break from the screen.");
+      vscode.window.showInformationMessage(
+        "👁️ Remember to blink! Your eyes need a break from the screen."
+      );
     }
   }, 20 * 60 * 1000);
 }

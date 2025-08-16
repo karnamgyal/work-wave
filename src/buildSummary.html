@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Describe Inserted Code</title>
+    <link rel="stylesheet" href="buildSummary.css" />
+  </head>
+  <body>
+    <div class="summary-container">
+  <div class="summary-avatar">📝</div>
+      <h1>🔍 Code Summary Assistant</h1>
+
+      <div class="summary-status">
+        <h2>Describe the Inserted Code</h2>
+        <div class="instruction-display">
+          💭 Please summarize what the newly inserted code does
+        </div>
+      </div>
+
+      <div class="input-section">
+        <textarea
+          id="summary"
+          class="summary-textarea"
+          placeholder="e.g., Adds a function to parse JSON and handle errors"
+        ></textarea>
+        <div class="controls">
+          <button class="btn primary" id="submitBtn">🚀 Submit Summary</button>
+          <button class="btn secondary" id="closeBtn" style="display: none">
+            ❌ Close
+          </button>
+        </div>
+      </div>
+
+      <div id="result" class="result-section" style="display: none">
+        <h3>🤖 Analysis Result <span id="verdict-badge" class="badge" style="display:none"></span></h3>
+        <div class="result-content"></div>
+      </div>
+
+      <div class="code-preview">
+        <h3>📊 Code Preview</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">📏</div>
+            <div class="stat-value" id="char-count">{{CHAR_COUNT}}</div>
+            <div class="stat-label">Characters</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">📝</div>
+            <div class="stat-value" id="line-count">{{LINE_COUNT}}</div>
+            <div class="stat-label">Lines</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">⏱️</div>
+            <div class="stat-value" id="review-time">{{REVIEW_TIME}}</div>
+            <div class="stat-label">Review Time</div>
+          </div>
+        </div>
+        <div class="code-container">
+          <div class="code">
+            <pre id="code-preview">{{CODE_PREVIEW}}</pre>
+          </div>
+          <div
+            class="truncation-notice"
+            id="truncation-notice"
+            style="display: none"
+          >
+            ⚠️ Preview truncated for display. Full code is stored for
+            processing.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="overlay" class="overlay">
+      <div class="overlay-box">
+        <div class="spinner"></div>
+        <div class="overlay-message">
+          🤖 Analyzing your summary with Gemini…
+        </div>
+      </div>
+    </div>
+
+    <script src="buildSummary.js"></script>
+  </body>
+</html>
