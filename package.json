@@ -6,9 +6,7 @@
   "engines": {
     "vscode": "^1.74.0"
   },
-  "categories": [
-    "Other"
-  ],
+  "categories": ["Other"],
   "activationEvents": [
     "onStartupFinished",
     "onCommand:coding-buddy-bot.startSession",
@@ -19,7 +17,13 @@
     "onCommand:coding-buddy-bot.openFrameDirectory",
     "onCommand:coding-buddy-bot.captureFrame",
     "onCommand:coding-buddy-bot.showBadgeQuickPick",
-    "onCommand:coding-buddy-bot.showBadgeOutput"
+    "onCommand:coding-buddy-bot.showBadgeOutput",
+    "onCommand:coding-buddy-bot.toggleThemeSwitching",
+    "onCommand:coding-buddy-bot.resetTheme",
+    "onCommand:coding-buddy-bot.previewTheme",
+    "onCommand:coding-buddy-bot.debugEmotionDetection",
+    "onCommand:coding-buddy-bot.testThemeChange",
+    "onCommand:coding-buddy-bot.toggleMultiModelDetection"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -67,6 +71,36 @@
       {
         "command": "coding-buddy-bot.showBadgeOutput",
         "title": "Coding Buddy: Show Badges (Output)",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.toggleThemeSwitching",
+        "title": "Toggle Mood-Based Theme Switching",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.resetTheme",
+        "title": "Reset Theme to Default",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.previewTheme",
+        "title": "Preview Theme for Emotion",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.debugEmotionDetection",
+        "title": "Debug Emotion Detection",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.testThemeChange",
+        "title": "Test Theme Change",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.toggleMultiModelDetection",
+        "title": "Toggle Multi-Model Emotion Detection",
         "category": "Coding Buddy"
       }
     ],

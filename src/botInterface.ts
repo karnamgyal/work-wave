@@ -81,7 +81,12 @@ export class BotInterface {
       this.currentReason = reason;
     }
     if (this.panel) {
-      this.updateBotInterface();
+        // Update only the emotion display without re-rendering entire HTML
+        this.panel.webview.postMessage({ 
+            command: 'updateEmotion', 
+            emotion: emotion, 
+            reason: reason || this.currentReason 
+            });
     }
   }
 
@@ -92,7 +97,13 @@ export class BotInterface {
     quality: string;
   }): void {
     this.codeStats = stats;
-    this.updateBotInterface();
+    if (this.panel) {
+      // Update only the code stats without re-rendering entire HTML
+      this.panel.webview.postMessage({ 
+        command: 'updateCodeStats', 
+        stats: stats 
+      });
+    }
   }
 
   public updateSessionStats(
@@ -100,10 +111,25 @@ export class BotInterface {
     breakthroughs: number,
     focus: number
   ): void {
-    this.sessionDuration = duration;
+    // Only update duration if it's not 0 (0 means don't update from extension)
+    if (duration > 0) {
+      this.sessionDuration = duration;
+    }
+    
+    // Only update interface if there are actual changes to breakthroughs or focus time
+    const hasChanges = this.breakthroughCount !== breakthroughs || this.focusTime !== focus;
+    
     this.breakthroughCount = breakthroughs;
     this.focusTime = focus;
-    this.updateBotInterface();
+    
+    // Only update specific stats without re-rendering entire HTML
+    if (hasChanges && this.panel) {
+      this.panel.webview.postMessage({ 
+        command: 'updateSessionStats', 
+        breakthroughs: breakthroughs,
+        focusTime: focus
+      });
+    }
   }
 
   public startTimer(): void {
@@ -123,9 +149,9 @@ export class BotInterface {
     
     this.waterReminderTimer = setInterval(() => {
       this.showWaterNotification();
-    }, 15 * 1000);
+    }, 5 * 60 * 1000); // 5 minutes instead of 15 seconds
     
-    console.log("💧 Water reminder started - notifications every 15 seconds");
+    console.log("💧 Water reminder started - notifications every 5 minutes");
   }
 
   public stopWaterReminder(): void {
@@ -158,10 +184,8 @@ export class BotInterface {
   }
 
   private getWebviewContent(): string {
-    const minutes = Math.floor(this.sessionDuration / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const displayTime =
-      hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
+    // Don't use sessionDuration for timer display - let the webview JavaScript handle it
+    const displayTime = '0m'; // Initial value, will be updated by JavaScript
 
     return `
             <!DOCTYPE html>
@@ -311,6 +335,43 @@ export class BotInterface {
                         border: 1px solid rgba(255, 0, 255, 0.3);
                         font-style: italic;
                         color: #ff00ff;
+                    }
+
+                    .break-reminder {
+                        font-size: 20px;
+                        margin: 15px 0;
+                        padding: 20px;
+                        background: linear-gradient(135deg, rgba(255, 165, 0, 0.2), rgba(255, 69, 0, 0.2));
+                        border-radius: 15px;
+                        border: 2px solid rgba(255, 165, 0, 0.5);
+                        color: #ffa500;
+                        text-align: center;
+                        animation: pulse 2s ease-in-out infinite;
+                        box-shadow: 
+                            0 0 20px rgba(255, 165, 0, 0.3),
+                            inset 0 0 20px rgba(255, 165, 0, 0.1);
+                    }
+
+                    @keyframes pulse {
+                        0%, 100% { 
+                            transform: scale(1);
+                            box-shadow: 0 0 20px rgba(255, 165, 0, 0.3);
+                        }
+                        50% { 
+                            transform: scale(1.02);
+                            box-shadow: 0 0 30px rgba(255, 165, 0, 0.5);
+                        }
+                    }
+
+                    .theme-info {
+                        font-size: 16px;
+                        margin: 15px 0;
+                        padding: 15px;
+                        background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(75, 0, 130, 0.1));
+                        border-radius: 15px;
+                        border: 1px solid rgba(138, 43, 226, 0.3);
+                        color: #8a2be2;
+                        text-align: center;
                     }
 
                     .stats-grid {
@@ -630,9 +691,21 @@ export class BotInterface {
                         <h2>Current Status</h2>
                         <div class="emotion-display">
                             🎭 Feeling: <strong>${this.currentEmotion}</strong>
+                            ${this.currentReason.includes('camera') ? '📹' : '💻'}
                         </div>
                         <div class="reason-display">
                             💭 ${this.currentReason}
+                        </div>
+                        ${this.currentEmotion === 'frustrated' ? `
+                        <div class="break-reminder">
+                            ⏸️ <strong>Time for a break!</strong> 
+                            <br>Take a few minutes to stretch, grab some water, or step away from the screen.
+                            <br>You'll come back refreshed and ready to tackle this challenge! 💪
+                        </div>
+                        ` : ''}
+                        <div class="theme-info">
+                            🎨 Current Theme: <strong>${this.getCurrentTheme()}</strong>
+                            <br>🔄 Mood-based switching: <strong>${this.isThemeSwitchingEnabled() ? 'Enabled' : 'Disabled'}</strong>
                         </div>
                     </div>
                     
@@ -775,8 +848,111 @@ export class BotInterface {
                             case 'waterReminder':
                                 addWaterMessage(message.message);
                                 break;
+                            case 'updateEmotion':
+                                updateEmotionDisplay(message.emotion, message.reason);
+                                break;
+                            case 'updateCodeStats':
+                                updateCodeStatsDisplay(message.stats);
+                                break;
+                            case 'updateSessionStats':
+                                updateSessionStatsDisplay(message.breakthroughs, message.focusTime);
+                                break;
                         }
                     });
+
+                    function updateEmotionDisplay(emotion, reason) {
+                        // Update emotion display
+                        const emotionDisplay = document.querySelector('.emotion-display');
+                        if (emotionDisplay) {
+                            const sourceIcon = reason && reason.includes('camera') ? '📹' : '💻';
+                            emotionDisplay.innerHTML = \`🎭 Feeling: <strong>\${emotion}</strong> \${sourceIcon}\`;
+                        }
+                        
+                        // Update reason display
+                        const reasonDisplay = document.querySelector('.reason-display');
+                        if (reasonDisplay) {
+                            reasonDisplay.innerHTML = \`💭 \${reason}\`;
+                        }
+                        
+                        // Update bot emoji
+                        const botAvatar = document.querySelector('.bot-avatar');
+                        if (botAvatar) {
+                            const emojiMap = {
+                                'happy': '😊',
+                                'frustrated': '😤',
+                                'focused': '🎯',
+                                'confused': '🤔',
+                                'surprised': '😲',
+                                'sad': '😢',
+                                'disgusted': '🤢',
+                                'content': '😌'
+                            };
+                            botAvatar.textContent = emojiMap[emotion] || '🤖';
+                        }
+                        
+                        // Update break reminder
+                        const breakReminder = document.querySelector('.break-reminder');
+                        if (breakReminder) {
+                            if (emotion === 'frustrated') {
+                                breakReminder.style.display = 'block';
+                            } else {
+                                breakReminder.style.display = 'none';
+                            }
+                        }
+                    }
+
+                    function updateCodeStatsDisplay(stats) {
+                        // Update line count
+                        const lineCountElements = document.querySelectorAll('.code-stats-grid .code-stat-card:nth-child(1) .code-stat-value:nth-child(2)');
+                        lineCountElements.forEach(el => {
+                            if (el.textContent !== stats.lineCount.toString()) {
+                                el.textContent = stats.lineCount;
+                            }
+                        });
+                        
+                        // Update error count
+                        const errorCountElements = document.querySelectorAll('.code-stats-grid .code-stat-card:nth-child(2) .code-stat-value:nth-child(2)');
+                        errorCountElements.forEach(el => {
+                            if (el.textContent !== stats.errorCount.toString()) {
+                                el.textContent = stats.errorCount;
+                            }
+                        });
+                        
+                        // Update complexity
+                        const complexityElements = document.querySelectorAll('.code-stats-grid .code-stat-card:nth-child(3) .code-stat-value:nth-child(2)');
+                        complexityElements.forEach(el => {
+                            if (el.textContent !== stats.complexity.toString()) {
+                                el.textContent = stats.complexity;
+                            }
+                        });
+                        
+                        // Update quality
+                        const qualityElements = document.querySelectorAll('.code-stats-grid .code-stat-card:nth-child(4) .code-stat-value:nth-child(2)');
+                        qualityElements.forEach(el => {
+                            if (el.textContent !== stats.quality) {
+                                el.textContent = stats.quality;
+                            }
+                        });
+                    }
+
+                    function updateSessionStatsDisplay(breakthroughs, focusTime) {
+                        // Update breakthrough count
+                        const breakthroughElements = document.querySelectorAll('.stats-grid .stat-card:nth-child(2) .stat-value:nth-child(2)');
+                        breakthroughElements.forEach(el => {
+                            if (el.textContent !== breakthroughs.toString()) {
+                                el.textContent = breakthroughs;
+                            }
+                        });
+                        
+                        // Update focus time (convert to seconds)
+                        const focusTimeElements = document.querySelectorAll('.stats-grid .stat-card:nth-child(3) .stat-value:nth-child(2)');
+                        const focusTimeSeconds = Math.round(focusTime / 1000);
+                        focusTimeElements.forEach(el => {
+                            if (el.textContent !== focusTimeSeconds.toString()) {
+                                el.textContent = focusTimeSeconds;
+                            }
+                        });
+                    }
                     
                     document.addEventListener('DOMContentLoaded', function() {
                         const startBtn = document.getElementById('start-btn');
@@ -804,6 +980,24 @@ export class BotInterface {
     
     if (this.panel) {
       this.panel.dispose();
+    }
+  }
+
+  private getCurrentTheme(): string {
+    try {
+      const themeManager = require('./themeManager').ThemeManager.getInstance();
+      return themeManager.getCurrentTheme();
+    } catch (error) {
+      return 'Unknown';
+    }
+  }
+
+  private isThemeSwitchingEnabled(): boolean {
+    try {
+      const themeManager = require('./themeManager').ThemeManager.getInstance();
+      return themeManager.isThemeSwitchingEnabled();
+    } catch (error) {
+      return false;
     }
   }
 }

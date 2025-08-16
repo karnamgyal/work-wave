@@ -215,13 +215,13 @@ export class RoboflowEmotionDetector {
             // Map Roboflow emotions to our emotion categories
             const emotionMap: { [key: string]: string } = {
                 'happy': 'happy',
-                'sad': 'frustrated',
+                'sad': 'sad', // Will be handled specially based on confidence
                 'angry': 'frustrated',
-                'disgust': 'frustrated',
+                'disgust': 'disgusted',
                 'fear': 'confused',
                 'surprise': 'surprised',
                 'neutral': 'focused',
-                'content': 'focused'
+                'content': 'content'
             };
 
             console.log('🎯 AI Detection Results:');
@@ -229,7 +229,19 @@ export class RoboflowEmotionDetector {
             console.log('  - Confidence:', Math.round(bestPrediction.confidence * 100) + '%');
             console.log('  - Bounding box:', bestPrediction.x, bestPrediction.y, bestPrediction.width, bestPrediction.height);
             
-            const mappedEmotion = emotionMap[bestPrediction.class] || 'No AI detection';
+            let mappedEmotion = emotionMap[bestPrediction.class] || 'No AI detection';
+            
+            // Special handling for 'sad' based on confidence
+            if (bestPrediction.class === 'sad') {
+                if (bestPrediction.confidence < 0.6) {
+                    mappedEmotion = 'focused';
+                    console.log('  - Sad detected with low confidence (<60%), mapping to focused');
+                } else {
+                    mappedEmotion = 'frustrated';
+                    console.log('  - Sad detected with high confidence (>=60%), mapping to frustrated');
+                }
+            }
+            
             console.log('  - Mapped emotion:', mappedEmotion);
 
             return {
