@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Buddy Bot</title>
+    <link rel="stylesheet" href="botInterface.css">
+</head>
+<body>
+    <div class="bot-container">
+        <div class="bot-avatar pulse">{{BOT_EMOJI}}</div>
+        <h1>🤖 Coding Buddy Bot</h1>
+        <div class="bot-status">
+            <h2>Current Status</h2>
+            <div class="emotion-display">🎭 Feeling: <strong>{{CURRENT_EMOTION}}</strong></div>
+            <div class="reason-display">💭 {{CURRENT_REASON}}</div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">⏱️</div>
+                <div class="stat-value" id="session-timer">{{DISPLAY_TIME}}</div>
+                <div class="stat-label">Session Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">🚀</div>
+                <div class="stat-value">{{BREAKTHROUGH_COUNT}}</div>
+                <div class="stat-label">Breakthroughs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">🎯</div>
+                <div class="stat-value">{{FOCUS_TIME}}</div>
+                <div class="stat-label">Focus Time</div>
+            </div>
+        </div>
+        <div class="code-analysis">
+            <h3>📊 Code Analysis</h3>
+            <div class="code-stats-grid">
+                <div class="code-stat-card">
+                    <div class="code-stat-value">📝</div>
+                    <div class="code-stat-value">{{LINE_COUNT}}</div>
+                    <div class="code-stat-label">Lines of Code</div>
+                </div>
+                <div class="code-stat-card">
+                    <div class="code-stat-value">❌</div>
+                    <div class="code-stat-value">{{ERROR_COUNT}}</div>
+                    <div class="code-stat-label">Errors</div>
+                </div>
+                <div class="code-stat-card">
+                    <div class="code-stat-value">🧠</div>
+                    <div class="code-stat-value">{{COMPLEXITY}}</div>
+                    <div class="code-stat-label">Complexity</div>
+                </div>
+                <div class="code-stat-card">
+                    <div class="code-stat-value">⭐</div>
+                    <div class="code-stat-value">{{QUALITY}}</div>
+                    <div class="code-stat-label">Quality</div>
+                </div>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="startSession()">🚀 Start Session</button>
+            <button class="btn" onclick="stopSession()">⏹️ Stop Session</button>
+        </div>
+        <div class="message-log">
+            <h3>💬 Recent Messages</h3>
+            <div class="message">🎯 Welcome to your coding session!</div>
+            <div class="message">💪 I'm here to cheer you on and keep you healthy!</div>
+            <div class="message">🌟 Remember: Every great developer started somewhere!</div>
+        </div>
+    </div>
+    <script src="botInterface.js"></script>
+</body>
+</html>
