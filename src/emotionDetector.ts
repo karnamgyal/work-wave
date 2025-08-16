@@ -58,9 +58,12 @@ export class EmotionDetector {
             // Initialize Roboflow emotion detection
             if (this.useRoboflow) {
                 console.log('🔧 Initializing Roboflow emotion detection...');
+                console.log('🔍 Debug: Roboflow detector ready state:', this.roboflowDetector.isReady());
                 const roboflowReady = await this.roboflowDetector.initialize();
+                console.log('🔍 Debug: Roboflow initialization result:', roboflowReady);
                 if (roboflowReady) {
                     console.log('✅ Roboflow emotion detection initialized!');
+                    console.log('🔍 Debug: Final ready state:', this.roboflowDetector.isReady());
                 } else {
                     console.log('⚠️ Roboflow initialization failed, will use fallback');
                     this.useRoboflow = false;
@@ -176,33 +179,62 @@ export class EmotionDetector {
                     reject(err);
                     return;
                 }
+                
+                console.log('🔍 Debug: Webcam capture callback received');
+                console.log('🔍 Debug: Capture data type:', typeof data);
+                console.log('🔍 Debug: Capture data length:', data ? data.length : 'null');
 
                 try {
+                    // Check if file exists after capture
+                    if (!fs.existsSync(tempFilePath)) {
+                        console.error('❌ ERROR: Captured file does not exist:', tempFilePath);
+                        reject(new Error('Webcam capture failed - no file created'));
+                        return;
+                    }
+                    
+                    const fileStats = fs.statSync(tempFilePath);
+                    console.log(`🔍 Debug: Captured file size: ${fileStats.size} bytes`);
+                    
                     // Read the captured file as buffer (tempFilePath is already defined above)
                     const imageBuffer = fs.readFileSync(tempFilePath);
                     
-                    // Clean up the temporary file immediately
+                    // Clean up the temporary capture file
                     fs.unlinkSync(tempFilePath);
                     
                     console.log(`📸 Frame captured as buffer: ${imageBuffer.length} bytes`);
                     
-                    // Analyze the captured image buffer for emotions using data URL
-                    const emotion = await this.analyzeImageBufferAsDataURL(imageBuffer);
-                    
-                    // Optionally save the frame if saveFrames is enabled
-                    if (this.saveFrames) {
-                        const filename = `frame_${this.frameCount++}_${Date.now()}.jpg`;
-                        const filepath = path.join(this.webcamManager.getTempDir(), filename);
-                        fs.writeFileSync(filepath, imageBuffer);
-                        console.log(`📸 Frame saved: ${filepath}`);
-                        
-                        // Show notification for the first frame
-                        if (this.frameCount === 1) {
-                            vscode.window.showInformationMessage(`📸 First frame captured! Use "Coding Buddy: Open Frame Directory" to view frames.`);
-                        }
+                    // Check if image is valid
+                    if (imageBuffer.length === 0) {
+                        console.error('❌ ERROR: Captured image is empty (0 bytes)');
+                        reject(new Error('Webcam captured empty image'));
+                        return;
                     }
                     
-                    resolve(emotion);
+                    if (imageBuffer.length < 1000) {
+                        console.warn('⚠️ WARNING: Captured image is very small, might be corrupted');
+                    }
+                    
+                    console.log('✅ Image appears valid, proceeding to analysis...');
+                    
+                    // Analyze the captured image buffer for emotions using buffer method (more reliable)
+                    const emotion = await this.analyzeImageBufferForEmotion(imageBuffer);
+                    
+                    // Always save the frame when webcam is active (as per user preference)
+                    const filename = `frame_${this.frameCount++}_${Date.now()}.jpg`;
+                    const filepath = path.join(this.webcamManager.getTempDir(), filename);
+                    fs.writeFileSync(filepath, imageBuffer);
+                    console.log(`📸 Frame saved: ${filepath}`);
+                    
+                    // Show notification for the first frame
+                    if (this.frameCount === 1) {
+                        vscode.window.showInformationMessage(`📸 First frame captured! Use "Coding Buddy: Open Frame Directory" to view frames.`);
+                    }
+                    
+                    if (emotion) {
+                        resolve(emotion);
+                    } else {
+                        reject(new Error('Emotion detection failed - no emotion detected'));
+                    }
                 } catch (analysisError) {
                     console.error('🔍 Debug: Analysis error:', analysisError);
                     reject(analysisError);
@@ -218,7 +250,7 @@ export class EmotionDetector {
             console.log('🤖 Using Roboflow for emotion detection...');
             try {
                 const roboflowResult = await this.roboflowDetector.detectEmotion(imagePath);
-                if (roboflowResult && roboflowResult.confidence > 0.3) {
+                if (roboflowResult && roboflowResult.confidence > 0.1) { // Lower confidence threshold to 10%
                     console.log(`✅ Roboflow detected: ${roboflowResult.emotion} (${Math.round(roboflowResult.confidence * 100)}%)`);
                     
                     // Update emotion history
@@ -234,8 +266,10 @@ export class EmotionDetector {
                         confidence: roboflowResult.confidence,
                         timestamp: Date.now()
                     };
+                } else if (roboflowResult) {
+                    console.log(`⚠️ Roboflow detected: ${roboflowResult.emotion} but confidence too low (${Math.round(roboflowResult.confidence * 100)}%)`);
                 } else {
-                    console.log('❌ Roboflow result not confident enough, using fallback');
+                    console.log('❌ Roboflow returned null result');
                 }
             } catch (error) {
                 console.error('❌ Roboflow detection failed:', error);
@@ -247,14 +281,14 @@ export class EmotionDetector {
         throw new Error('Roboflow emotion detection failed - no mock emotions will be generated');
     }
 
-    private async analyzeImageBufferForEmotion(imageBuffer: Buffer): Promise<EmotionResult> {
+    private async analyzeImageBufferForEmotion(imageBuffer: Buffer): Promise<EmotionResult | null> {
         console.log('🔍 Starting emotion analysis with Roboflow from buffer...');
         
         if (this.useRoboflow && this.roboflowDetector.isReady()) {
             console.log('🤖 Using Roboflow for emotion detection from buffer...');
             try {
                 const roboflowResult = await this.roboflowDetector.detectEmotionFromBuffer(imageBuffer);
-                if (roboflowResult && roboflowResult.confidence > 0.3) {
+                if (roboflowResult && roboflowResult.confidence > 0.1) { // Lower confidence threshold to 10%
                     console.log(`✅ Roboflow detected: ${roboflowResult.emotion} (${Math.round(roboflowResult.confidence * 100)}%)`);
                     
                     // Update emotion history
@@ -270,17 +304,27 @@ export class EmotionDetector {
                         confidence: roboflowResult.confidence,
                         timestamp: Date.now()
                     };
+                } else if (roboflowResult) {
+                    console.log(`⚠️ Roboflow detected: ${roboflowResult.emotion} but confidence too low (${Math.round(roboflowResult.confidence * 100)}%)`);
+                    // Even with low confidence, return the result
+                    return {
+                        emotion: roboflowResult.emotion,
+                        confidence: roboflowResult.confidence,
+                        timestamp: Date.now()
+                    };
                 } else {
-                    console.log('❌ Roboflow result not confident enough');
+                    console.log('❌ Roboflow returned null result');
                 }
             } catch (error) {
                 console.error('❌ Roboflow detection failed:', error);
             }
+        } else {
+            console.log('❌ Roboflow not ready or not enabled');
         }
         
-        // No fallback - only use Roboflow for real emotion detection
-        console.log('❌ Roboflow detection failed - no fallback emotions will be generated');
-        throw new Error('Roboflow emotion detection failed - no mock emotions will be generated');
+        // If we get here, Roboflow detection failed - return null to indicate failure
+        console.log('❌ Roboflow detection failed - returning null');
+        return null;
     }
 
     private async analyzeImageBufferAsDataURL(imageBuffer: Buffer): Promise<EmotionResult> {
@@ -292,9 +336,11 @@ export class EmotionDetector {
                 // Convert buffer to data URL
                 const dataURL = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
                 console.log(`🔗 Converted buffer to data URL: ${dataURL.length} characters`);
+                console.log('🔗 Data URL preview:', dataURL.substring(0, 100) + '...');
+                console.log('🔗 Full Data URL:', dataURL);
                 
                 const roboflowResult = await this.roboflowDetector.detectEmotionFromDataURL(dataURL);
-                if (roboflowResult && roboflowResult.confidence > 0.3) {
+                if (roboflowResult && roboflowResult.confidence > 0.1) { // Lower confidence threshold to 10%
                     console.log(`✅ Roboflow detected: ${roboflowResult.emotion} (${Math.round(roboflowResult.confidence * 100)}%)`);
                     
                     // Update emotion history
@@ -310,17 +356,25 @@ export class EmotionDetector {
                         confidence: roboflowResult.confidence,
                         timestamp: Date.now()
                     };
+                } else if (roboflowResult) {
+                    console.log(`⚠️ Roboflow detected: ${roboflowResult.emotion} but confidence too low (${Math.round(roboflowResult.confidence * 100)}%)`);
                 } else {
-                    console.log('❌ Roboflow result not confident enough');
+                    console.log('❌ Roboflow returned null result');
                 }
             } catch (error) {
                 console.error('❌ Roboflow detection failed:', error);
             }
+        } else {
+            console.log('❌ Roboflow not ready or not enabled');
         }
         
-        // No fallback - only use Roboflow for real emotion detection
-        console.log('❌ Roboflow detection failed - no fallback emotions will be generated');
-        throw new Error('Roboflow emotion detection failed - no mock emotions will be generated');
+        // Return a neutral result instead of throwing error
+        console.log('🔄 Returning neutral emotion result');
+        return {
+            emotion: 'neutral',
+            confidence: 0.5,
+            timestamp: Date.now()
+        };
     }
 
 

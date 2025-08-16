@@ -115,9 +115,11 @@ export class CodingBuddyBot {
     }
 
     private handleEmotionChange(emotion: string, confidence: number): void {
-        if (confidence < 0.7) {
-            return; // Low confidence, skip
-        }
+        // Log all detected emotions for debugging
+        console.log(`🎭 Emotion detected: ${emotion} (${Math.round(confidence * 100)}% confidence)`);
+        
+        // Show notification for detected emotions
+        vscode.window.showInformationMessage(`🎭 Detected: ${emotion} (${Math.round(confidence * 100)}% confidence)`);
 
         const now = Date.now();
         const timeSinceLastChange = now - (this.lastEmotionTime || now);

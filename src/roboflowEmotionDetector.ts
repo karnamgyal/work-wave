@@ -84,9 +84,13 @@ export class RoboflowEmotionDetector {
             
             return this.processRoboflowResult(response.data);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('❌ Error detecting emotion with Roboflow:', error);
             console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+            if (error.response) {
+                console.error('❌ Response status:', error.response.status);
+                console.error('❌ Response data:', error.response.data);
+            }
             return null;
         }
     }
@@ -123,9 +127,13 @@ export class RoboflowEmotionDetector {
             
             return this.processRoboflowResult(response.data);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('❌ Error detecting emotion with Roboflow from buffer:', error);
             console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+            if (error.response) {
+                console.error('❌ Response status:', error.response.status);
+                console.error('❌ Response data:', error.response.data);
+            }
             return null;
         }
     }
@@ -166,9 +174,13 @@ export class RoboflowEmotionDetector {
             
             return this.processRoboflowResult(response.data);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('❌ Error detecting emotion with Roboflow from data URL:', error);
             console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+            if (error.response) {
+                console.error('❌ Response status:', error.response.status);
+                console.error('❌ Response data:', error.response.data);
+            }
             return null;
         }
     }
@@ -231,7 +243,7 @@ export class RoboflowEmotionDetector {
                 }
             };
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error processing Roboflow result:', error);
             return null;
         }
