@@ -76,7 +76,7 @@ export class EmotionDetector {
             // Start emotion detection
             this.startRealDetection();
             
-            vscode.window.showInformationMessage('📹 Camera activated! I\'m watching for your coding expressions... Frames will be saved automatically.');
+            vscode.window.showInformationMessage('📹 Camera activated! I\'m watching for your coding expressions every 5 seconds... Frames will be saved automatically.');
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to start camera: ${error}`);
             this.isDetecting = false;
@@ -147,9 +147,25 @@ export class EmotionDetector {
     }
 
     private startRealDetection(): void {
-        // Only capture and analyze when explicitly triggered
-        // No automatic interval - frames are captured on-demand
-        console.log('🎯 Emotion detection ready - will analyze frames when captured');
+        // Start automatic emotion detection every 5 seconds
+        console.log('🎯 Starting automatic emotion detection every 5 seconds...');
+        
+        this.detectionInterval = setInterval(async () => {
+            if (this.isDetecting && this.callback) {
+                try {
+                    console.log('📸 Auto-capturing frame for emotion detection...');
+                    const emotion = await this.captureAndAnalyzeEmotion();
+                    if (emotion) {
+                        this.callback(emotion.emotion, emotion.confidence);
+                    }
+                } catch (error) {
+                    console.error('Error in automatic emotion detection:', error);
+                    // Don't show error message to user for automatic captures to avoid spam
+                }
+            }
+        }, 5000); // 5 seconds = 5000 milliseconds
+        
+        console.log('✅ Automatic emotion detection started! Capturing every 5 seconds.');
     }
 
     private async captureAndAnalyzeEmotion(): Promise<EmotionResult | null> {
