@@ -277,6 +277,26 @@ export class CodingBuddyBot {
         vscode.window.showInformationMessage(randomMessage);
     }
 
+    public celebrateErrorFix(errorCount: number, fileName: string): void {
+        if (!this.isActive) return;
+        
+        // Increment breakthrough count for fixing errors
+        this.breakthroughCount++;
+        
+        const celebrations = [
+            `🎉 VICTORY! You just debugged ${errorCount} error${errorCount > 1 ? 's' : ''} in ${fileName}! That's ownership! 💪`,
+            `🔥 DEBUGGING MASTER! ${errorCount} error${errorCount > 1 ? 's' : ''} down in ${fileName}! You're unstoppable! 🚀`,
+            `⚡ ERROR ELIMINATOR! You just fixed ${errorCount} issue${errorCount > 1 ? 's' : ''} in ${fileName}! Pure debugging excellence! 🎯`,
+            `🌟 PROBLEM SOLVER! ${errorCount} error${errorCount > 1 ? 's' : ''} conquered in ${fileName}! Your skills are legendary! 🔥`,
+            `💎 DEBUGGING CHAMPION! You just resolved ${errorCount} error${errorCount > 1 ? 's' : ''} in ${fileName}! That's how you own your code! 🏆`
+        ];
+        
+        const celebration = celebrations[Math.floor(Math.random() * celebrations.length)];
+        vscode.window.showInformationMessage(celebration);
+        
+        console.log(`🎉 CELEBRATION: ${celebration}`);
+    }
+
     private provideRealTimeFeedback(emotion: string, confidence: number): void {
         // only occasionally to avoid spam AND only when active
         if (Math.random() > 0.02 || !this.isActive) return;

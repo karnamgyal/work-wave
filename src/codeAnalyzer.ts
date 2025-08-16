@@ -19,6 +19,9 @@ export class CodeAnalyzer {
   private onEmotionChange:
     | ((emotion: string, reason: string) => void)
     | undefined;
+  private onErrorFix:
+    | ((errorCount: number, fileName: string) => void)
+    | undefined;
 
   constructor() {
     console.log("CodeAnalyzer initialized");
@@ -29,6 +32,12 @@ export class CodeAnalyzer {
     callback: (emotion: string, reason: string) => void
   ): void {
     this.onEmotionChange = callback;
+  }
+
+  public setErrorFixCallback(
+    callback: (errorCount: number, fileName: string) => void
+  ): void {
+    this.onErrorFix = callback;
   }
 
   private setupFileWatcher(): void {
@@ -471,6 +480,30 @@ export class CodeAnalyzer {
     let emotion: string;
     let reason: string;
 
+    // Check if errors were just fixed (had errors before, no errors now)
+    const baseline = previousResult ?? this.analysisResults.get(fileName);
+    const errorsJustFixed = baseline && baseline.hasErrors && !result.hasErrors;
+
+    if (errorsJustFixed) {
+      // 🎉 CELEBRATE THE WIN! Errors were fixed!
+      emotion = "happy";
+      const fixedCount = baseline.errorCount;
+      if (fixedCount > 1) {
+        reason = `🎉 AMAZING! You just fixed ${fixedCount} errors in ${path.basename(fileName)}! That's some serious debugging skills! 💪`;
+      } else {
+        reason = `🎉 NICE! You just fixed that error in ${path.basename(fileName)}! Your debugging game is strong! 🔥`;
+      }
+      
+      // Call celebration callback if available
+      if (this.onErrorFix) {
+        this.onErrorFix(fixedCount, path.basename(fileName));
+      }
+      
+      console.log(`🎉 ERROR FIXED! ${emotion} - ${reason}`);
+      this.onEmotionChange(emotion, reason);
+      return;
+    }
+
     if (result.hasErrors) {
       if (result.errorCount > 1) {
         emotion = "frustrated";
@@ -490,7 +523,6 @@ export class CodeAnalyzer {
     }
 
     // Only trigger emotion change if it's different or significant
-    const baseline = previousResult ?? this.analysisResults.get(fileName);
     if (
       !baseline ||
       baseline.hasErrors !== result.hasErrors ||

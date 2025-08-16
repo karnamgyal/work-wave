@@ -38,6 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Initialize code analyzer
   codeAnalyzer = new CodeAnalyzer();
+  
+  // Set up error fix celebration callback
+  codeAnalyzer.setErrorFixCallback((errorCount, fileName) => {
+    codingBuddyBot.celebrateErrorFix(errorCount, fileName);
+  });
+  
   codeAnalyzer.setEmotionCallback((emotion, reason) => {
     console.log(
       `[EXTENSION] Emotion callback triggered: ${emotion}, reason: ${reason}`
