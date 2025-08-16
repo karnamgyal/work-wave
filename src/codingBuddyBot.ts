@@ -86,6 +86,19 @@ export class CodingBuddyBot {
         return this.emotionDetector;
     }
 
+    public async captureFrameAndDetectEmotion(): Promise<void> {
+        if (!this.isActive || !this.isCameraActive) {
+            vscode.window.showWarningMessage('Please start a session and turn on the camera first!');
+            return;
+        }
+
+        try {
+            await this.emotionDetector.triggerEmotionDetection();
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to capture frame: ${error}`);
+        }
+    }
+
     private async startEmotionDetection(): Promise<void> {
         if (!this.isCameraActive) {
             return;

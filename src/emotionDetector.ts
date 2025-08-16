@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { WebcamManager } from './webcamManager';
+import { RoboflowEmotionDetector } from './roboflowEmotionDetector';
 
 // Note: We'll use a simplified approach with face-api for emotion detection
 // In a production environment, you might want to use more sophisticated models
@@ -24,10 +25,13 @@ export class EmotionDetector {
     private emotionHistory: string[] = [];
     private webcamManager: WebcamManager;
     private saveFrames: boolean = true; // Always save frames when webcam is active
+    private roboflowDetector: RoboflowEmotionDetector;
+    private useRoboflow: boolean = true;
 
     constructor() {
         this.webcamManager = WebcamManager.getInstance();
-        console.log('EmotionDetector initialized with real webcam support');
+        this.roboflowDetector = new RoboflowEmotionDetector();
+        console.log('EmotionDetector initialized with Roboflow emotion detection');
     }
 
     public async startDetection(callback: (emotion: string, confidence: number) => void): Promise<void> {
@@ -49,6 +53,18 @@ export class EmotionDetector {
             const webcamWorks = await this.webcamManager.testWebcam();
             if (!webcamWorks) {
                 throw new Error('Webcam not accessible');
+            }
+
+            // Initialize Roboflow emotion detection
+            if (this.useRoboflow) {
+                console.log('🔧 Initializing Roboflow emotion detection...');
+                const roboflowReady = await this.roboflowDetector.initialize();
+                if (roboflowReady) {
+                    console.log('✅ Roboflow emotion detection initialized!');
+                } else {
+                    console.log('⚠️ Roboflow initialization failed, will use fallback');
+                    this.useRoboflow = false;
+                }
             }
 
             // Initialize webcam
@@ -86,6 +102,24 @@ export class EmotionDetector {
         vscode.window.showInformationMessage('📹 Camera deactivated');
     }
 
+    public async triggerEmotionDetection(): Promise<void> {
+        if (!this.isDetecting || !this.callback) {
+            console.log('⚠️ Emotion detection not active');
+            return;
+        }
+
+        try {
+            console.log('📸 Triggering emotion detection...');
+            const emotion = await this.captureAndAnalyzeEmotion();
+            if (emotion) {
+                this.callback(emotion.emotion, emotion.confidence);
+            }
+        } catch (error) {
+            console.error('Error in emotion detection:', error);
+            vscode.window.showErrorMessage(`Emotion detection failed: ${error}`);
+        }
+    }
+
     private async initializeWebcam(): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
@@ -110,23 +144,9 @@ export class EmotionDetector {
     }
 
     private startRealDetection(): void {
-        // Capture frames every 5 seconds for emotion analysis
-        this.detectionInterval = setInterval(async () => {
-            if (!this.isDetecting || !this.callback) {
-                return;
-            }
-
-            try {
-                const emotion = await this.captureAndAnalyzeEmotion();
-                if (emotion) {
-                    this.callback(emotion.emotion, emotion.confidence);
-                }
-            } catch (error) {
-                console.error('Error in emotion detection:', error);
-                // Fall back to mock detection if webcam fails
-                this.fallbackToMockDetection();
-            }
-        }, 5000); // Capture every 5 seconds
+        // Only capture and analyze when explicitly triggered
+        // No automatic interval - frames are captured on-demand
+        console.log('🎯 Emotion detection ready - will analyze frames when captured');
     }
 
     private async captureAndAnalyzeEmotion(): Promise<EmotionResult | null> {
@@ -136,24 +156,46 @@ export class EmotionDetector {
                 return;
             }
 
-            const filename = `frame_${this.frameCount++}_${Date.now()}.jpg`;
-            const filepath = path.join(this.webcamManager.getTempDir(), filename);
-
-            this.webcam.capture(filepath, async (err: any, data: any) => {
+            // Debug: Check temp directory
+            const tempDir = this.webcamManager.getTempDir();
+            console.log('🔍 Debug: Temp directory:', tempDir);
+            
+            // Ensure temp directory exists
+            if (!fs.existsSync(tempDir)) {
+                console.log('🔍 Debug: Creating temp directory...');
+                fs.mkdirSync(tempDir, { recursive: true });
+            }
+            
+            // Capture frame as buffer using the correct method with full path
+            const tempFilePath = path.join(tempDir, 'temp_frame.jpg');
+            console.log('🔍 Debug: Capturing to:', tempFilePath);
+            
+            this.webcam.capture(tempFilePath, async (err: any, data: any) => {
                 if (err) {
+                    console.error('🔍 Debug: Webcam capture error:', err);
                     reject(err);
                     return;
                 }
 
                 try {
-                    // Analyze the captured image for emotions
-                    const emotion = await this.analyzeImageForEmotion(filepath);
+                    // Read the captured file as buffer (tempFilePath is already defined above)
+                    const imageBuffer = fs.readFileSync(tempFilePath);
                     
-                    // Keep the file if saveFrames is enabled, otherwise delete it
-                    if (!this.saveFrames) {
-                        fs.unlink(filepath, () => {});
-                    } else {
+                    // Clean up the temporary file immediately
+                    fs.unlinkSync(tempFilePath);
+                    
+                    console.log(`📸 Frame captured as buffer: ${imageBuffer.length} bytes`);
+                    
+                    // Analyze the captured image buffer for emotions using data URL
+                    const emotion = await this.analyzeImageBufferAsDataURL(imageBuffer);
+                    
+                    // Optionally save the frame if saveFrames is enabled
+                    if (this.saveFrames) {
+                        const filename = `frame_${this.frameCount++}_${Date.now()}.jpg`;
+                        const filepath = path.join(this.webcamManager.getTempDir(), filename);
+                        fs.writeFileSync(filepath, imageBuffer);
                         console.log(`📸 Frame saved: ${filepath}`);
+                        
                         // Show notification for the first frame
                         if (this.frameCount === 1) {
                             vscode.window.showInformationMessage(`📸 First frame captured! Use "Coding Buddy: Open Frame Directory" to view frames.`);
@@ -162,10 +204,7 @@ export class EmotionDetector {
                     
                     resolve(emotion);
                 } catch (analysisError) {
-                    // Clean up the temporary file even if analysis fails
-                    if (!this.saveFrames) {
-                        fs.unlink(filepath, () => {});
-                    }
+                    console.error('🔍 Debug: Analysis error:', analysisError);
                     reject(analysisError);
                 }
             });
@@ -173,78 +212,120 @@ export class EmotionDetector {
     }
 
     private async analyzeImageForEmotion(imagePath: string): Promise<EmotionResult> {
-        // For now, we'll use a simplified emotion detection approach
-        // In a real implementation, you would use face-api.js or similar
+        console.log('🔍 Starting emotion analysis with Roboflow...');
         
-        // Simulate emotion detection based on image analysis
-        // This is a placeholder - you would replace this with actual face detection
-        const emotions = ['focused', 'happy', 'confident', 'frustrated', 'confused', 'surprised', 'concentrated'];
-        
-        // Use a simple heuristic based on time and previous emotions
-        const timeBasedEmotion = this.getTimeBasedEmotion();
-        const confidence = this.calculateConfidence(timeBasedEmotion);
-        
-        // Update emotion history
-        this.emotionHistory.push(timeBasedEmotion);
-        if (this.emotionHistory.length > 10) {
-            this.emotionHistory.shift();
+        if (this.useRoboflow && this.roboflowDetector.isReady()) {
+            console.log('🤖 Using Roboflow for emotion detection...');
+            try {
+                const roboflowResult = await this.roboflowDetector.detectEmotion(imagePath);
+                if (roboflowResult && roboflowResult.confidence > 0.3) {
+                    console.log(`✅ Roboflow detected: ${roboflowResult.emotion} (${Math.round(roboflowResult.confidence * 100)}%)`);
+                    
+                    // Update emotion history
+                    this.emotionHistory.push(roboflowResult.emotion);
+                    if (this.emotionHistory.length > 10) {
+                        this.emotionHistory.shift();
+                    }
+                    
+                    this.lastEmotion = roboflowResult.emotion;
+                    
+                    return {
+                        emotion: roboflowResult.emotion,
+                        confidence: roboflowResult.confidence,
+                        timestamp: Date.now()
+                    };
+                } else {
+                    console.log('❌ Roboflow result not confident enough, using fallback');
+                }
+            } catch (error) {
+                console.error('❌ Roboflow detection failed:', error);
+            }
         }
         
-        this.lastEmotion = timeBasedEmotion;
-        
-        return {
-            emotion: timeBasedEmotion,
-            confidence: confidence,
-            timestamp: Date.now()
-        };
+        // No fallback - only use Roboflow for real emotion detection
+        console.log('❌ Roboflow detection failed - no fallback emotions will be generated');
+        throw new Error('Roboflow emotion detection failed - no mock emotions will be generated');
     }
 
-    private getTimeBasedEmotion(): string {
-        const emotions = ['focused', 'happy', 'confident', 'frustrated', 'confused', 'surprised', 'concentrated'];
+    private async analyzeImageBufferForEmotion(imageBuffer: Buffer): Promise<EmotionResult> {
+        console.log('🔍 Starting emotion analysis with Roboflow from buffer...');
         
-        // Simple heuristic: alternate between focused and other emotions
-        const time = Date.now();
-        const timeBasedIndex = Math.floor(time / 10000) % emotions.length;
-        
-        // 70% chance to stay focused (realistic for coding)
-        if (Math.random() < 0.7) {
-            return 'focused';
+        if (this.useRoboflow && this.roboflowDetector.isReady()) {
+            console.log('🤖 Using Roboflow for emotion detection from buffer...');
+            try {
+                const roboflowResult = await this.roboflowDetector.detectEmotionFromBuffer(imageBuffer);
+                if (roboflowResult && roboflowResult.confidence > 0.3) {
+                    console.log(`✅ Roboflow detected: ${roboflowResult.emotion} (${Math.round(roboflowResult.confidence * 100)}%)`);
+                    
+                    // Update emotion history
+                    this.emotionHistory.push(roboflowResult.emotion);
+                    if (this.emotionHistory.length > 10) {
+                        this.emotionHistory.shift();
+                    }
+                    
+                    this.lastEmotion = roboflowResult.emotion;
+                    
+                    return {
+                        emotion: roboflowResult.emotion,
+                        confidence: roboflowResult.confidence,
+                        timestamp: Date.now()
+                    };
+                } else {
+                    console.log('❌ Roboflow result not confident enough');
+                }
+            } catch (error) {
+                console.error('❌ Roboflow detection failed:', error);
+            }
         }
         
-        return emotions[timeBasedIndex];
+        // No fallback - only use Roboflow for real emotion detection
+        console.log('❌ Roboflow detection failed - no fallback emotions will be generated');
+        throw new Error('Roboflow emotion detection failed - no mock emotions will be generated');
     }
 
-    private calculateConfidence(emotion: string): number {
-        const baseConfidence = 0.8;
-        const variation = 0.15;
+    private async analyzeImageBufferAsDataURL(imageBuffer: Buffer): Promise<EmotionResult> {
+        console.log('🔍 Starting emotion analysis with Roboflow from data URL...');
         
-        switch (emotion) {
-            case 'focused':
-            case 'concentrated':
-                return baseConfidence + variation * 0.8;
-            case 'confident':
-                return baseConfidence + variation * 1.0;
-            case 'happy':
-                return baseConfidence + variation * 0.6;
-            case 'surprised':
-                return baseConfidence + variation * 0.4;
-            case 'frustrated':
-            case 'confused':
-                return baseConfidence - variation * 0.3;
-            default:
-                return baseConfidence + variation * (Math.random() - 0.5);
+        if (this.useRoboflow && this.roboflowDetector.isReady()) {
+            console.log('🤖 Using Roboflow for emotion detection from data URL...');
+            try {
+                // Convert buffer to data URL
+                const dataURL = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                console.log(`🔗 Converted buffer to data URL: ${dataURL.length} characters`);
+                
+                const roboflowResult = await this.roboflowDetector.detectEmotionFromDataURL(dataURL);
+                if (roboflowResult && roboflowResult.confidence > 0.3) {
+                    console.log(`✅ Roboflow detected: ${roboflowResult.emotion} (${Math.round(roboflowResult.confidence * 100)}%)`);
+                    
+                    // Update emotion history
+                    this.emotionHistory.push(roboflowResult.emotion);
+                    if (this.emotionHistory.length > 10) {
+                        this.emotionHistory.shift();
+                    }
+                    
+                    this.lastEmotion = roboflowResult.emotion;
+                    
+                    return {
+                        emotion: roboflowResult.emotion,
+                        confidence: roboflowResult.confidence,
+                        timestamp: Date.now()
+                    };
+                } else {
+                    console.log('❌ Roboflow result not confident enough');
+                }
+            } catch (error) {
+                console.error('❌ Roboflow detection failed:', error);
+            }
         }
+        
+        // No fallback - only use Roboflow for real emotion detection
+        console.log('❌ Roboflow detection failed - no fallback emotions will be generated');
+        throw new Error('Roboflow emotion detection failed - no mock emotions will be generated');
     }
 
-    private fallbackToMockDetection(): void {
-        if (!this.callback) return;
-        
-        const emotions = ['focused', 'happy', 'confident', 'frustrated', 'confused', 'surprised', 'concentrated'];
-        const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
-        const confidence = 0.7 + Math.random() * 0.2;
-        
-        this.callback(randomEmotion, confidence);
-    }
+
+
+
 
     // Mock method to simulate camera access (for testing)
     public async checkCameraAccess(): Promise<boolean> {

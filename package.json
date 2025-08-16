@@ -44,6 +44,11 @@
         "command": "coding-buddy-bot.openFrameDirectory",
         "title": "Open Frame Directory",
         "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.captureFrame",
+        "title": "Capture Frame & Detect Emotion",
+        "category": "Coding Buddy"
       }
     ],
     "statusBar": {

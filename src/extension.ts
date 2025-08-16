@@ -74,7 +74,15 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(startSession, stopSession, toggleCamera, showBot, testWebcam, openFrameDirectory);
+    let captureFrame = vscode.commands.registerCommand('coding-buddy-bot.captureFrame', async () => {
+        if (codingBuddyBot) {
+            await codingBuddyBot.captureFrameAndDetectEmotion();
+        } else {
+            vscode.window.showWarningMessage('Please start a coding session first!');
+        }
+    });
+
+    context.subscriptions.push(startSession, stopSession, toggleCamera, showBot, testWebcam, openFrameDirectory, captureFrame);
 
     // Set initial status
     statusBarManager.updateStatus('🔴 Inactive');
