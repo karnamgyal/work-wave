@@ -82,23 +82,6 @@ export class CodingBuddyBot {
         return this.isCameraActive;
     }
 
-    public getEmotionDetector(): EmotionDetector {
-        return this.emotionDetector;
-    }
-
-    public async captureFrameAndDetectEmotion(): Promise<void> {
-        if (!this.isActive || !this.isCameraActive) {
-            vscode.window.showWarningMessage('Please start a session and turn on the camera first!');
-            return;
-        }
-
-        try {
-            await this.emotionDetector.triggerEmotionDetection();
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to capture frame: ${error}`);
-        }
-    }
-
     private async startEmotionDetection(): Promise<void> {
         if (!this.isCameraActive) {
             return;
@@ -115,47 +98,10 @@ export class CodingBuddyBot {
     }
 
     private handleEmotionChange(emotion: string, confidence: number): void {
-        // Log all detected emotions for debugging
-        console.log(`🎭 Emotion detected: ${emotion} (${Math.round(confidence * 100)}% confidence)`);
-        
-        // Show notification for detected emotions
-        vscode.window.showInformationMessage(`🎭 Detected: ${emotion} (${Math.round(confidence * 100)}% confidence)`);
-
-        const now = Date.now();
-        const timeSinceLastChange = now - (this.lastEmotionTime || now);
-
-        // Track emotion changes
-        if (this.lastEmotionTime && this.lastEmotionTime !== now) {
-            this.emotionChangeCount++;
-            
-            // Detect breakthroughs (frustration -> happiness/confidence)
-            // For mock mode, we'll simulate breakthroughs randomly
-            if (Math.random() < 0.3) { // 30% chance of breakthrough
-                this.breakthroughCount++;
-                this.showBreakthroughMessage();
-            }
-
-            // Detect focus patterns
-            if (emotion === 'focused' || emotion === 'concentrated') {
-                this.focusTime += timeSinceLastChange;
-            }
-
-            // Detect frustration
-            if (emotion === 'frustrated' || emotion === 'confused') {
-                this.frustrationTime += timeSinceLastChange;
-                
-                // Provide encouragement after prolonged frustration
-                if (this.frustrationTime > 5 * 60 * 1000) { // 5 minutes
-                    this.showEncouragementMessage();
-                    this.frustrationTime = 0; // Reset counter
-                }
-            }
-        }
-
-        this.lastEmotionTime = now;
-
-        // Provide real-time feedback for certain emotions
-        this.provideRealTimeFeedback(emotion, confidence);
+    // EmotionDetector's random emotions are ignored for bot interface/status bar
+    // Only codeAnalyzer-driven emotions are shown in the UI
+    // This method is now a no-op for UI updates
+    return;
     }
 
     private showBreakthroughMessage(): void {
