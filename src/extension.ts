@@ -136,7 +136,35 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(startSession, stopSession, showBot);
+  let toggleCamera = vscode.commands.registerCommand(
+    "coding-buddy-bot.toggleCamera",
+    async () => {
+      await codingBuddyBot.toggleCamera();
+    }
+  );
+
+  let testWebcam = vscode.commands.registerCommand(
+    "coding-buddy-bot.testWebcam",
+    async () => {
+      await codingBuddyBot.testWebcam();
+    }
+  );
+
+  let openFrameDirectory = vscode.commands.registerCommand(
+    "coding-buddy-bot.openFrameDirectory",
+    async () => {
+      await codingBuddyBot.openFrameDirectory();
+    }
+  );
+
+  let captureFrame = vscode.commands.registerCommand(
+    "coding-buddy-bot.captureFrame",
+    async () => {
+      await codingBuddyBot.captureFrame();
+    }
+  );
+
+  context.subscriptions.push(startSession, stopSession, showBot, toggleCamera, testWebcam, openFrameDirectory, captureFrame);
 
   // Removed: AI suggestion tracking test commands
 

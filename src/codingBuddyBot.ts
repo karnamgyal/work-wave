@@ -82,6 +82,52 @@ export class CodingBuddyBot {
         return this.isCameraActive;
     }
 
+    public async testWebcam(): Promise<void> {
+        try {
+            const webcamWorks = await this.emotionDetector.testWebcam();
+            if (webcamWorks) {
+                vscode.window.showInformationMessage('✅ Webcam test successful! Camera is working properly.');
+            } else {
+                vscode.window.showErrorMessage('❌ Webcam test failed. Please check your camera permissions and connections.');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Webcam test failed: ${error}`);
+        }
+    }
+
+    public async openFrameDirectory(): Promise<void> {
+        try {
+            const frameDir = this.emotionDetector.getFrameDirectory();
+            if (frameDir) {
+                const uri = vscode.Uri.file(frameDir);
+                await vscode.commands.executeCommand('vscode.openFolder', uri);
+                vscode.window.showInformationMessage('📁 Opened frame directory');
+            } else {
+                vscode.window.showWarningMessage('No frame directory available');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to open frame directory: ${error}`);
+        }
+    }
+
+    public async captureFrame(): Promise<void> {
+        if (!this.isActive) {
+            vscode.window.showWarningMessage('Please start a coding session first!');
+            return;
+        }
+
+        try {
+            const emotion = await this.emotionDetector.captureAndDetectEmotion();
+            if (emotion) {
+                vscode.window.showInformationMessage(`📸 Frame captured! Detected emotion: ${emotion}`);
+            } else {
+                vscode.window.showInformationMessage('📸 Frame captured! No emotion detected.');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to capture frame: ${error}`);
+        }
+    }
+
     private async startEmotionDetection(): Promise<void> {
         if (!this.isCameraActive) {
             return;
@@ -98,10 +144,39 @@ export class CodingBuddyBot {
     }
 
     private handleEmotionChange(emotion: string, confidence: number): void {
-    // EmotionDetector's random emotions are ignored for bot interface/status bar
-    // Only codeAnalyzer-driven emotions are shown in the UI
-    // This method is now a no-op for UI updates
-    return;
+        console.log(`[ROBOFLOW] Emotion detected: ${emotion} (confidence: ${Math.round(confidence * 100)}%)`);
+        
+        // Only show notifications for high-confidence detections to avoid spam
+        if (confidence > 0.3) { // 30% confidence threshold
+            switch (emotion) {
+                case 'happy':
+                    vscode.window.showInformationMessage(`😊 I can see you're happy! Your positive energy is contagious! (${Math.round(confidence * 100)}% confidence)`);
+                    break;
+                case 'focused':
+                    if (this.focusTime > 5 * 60 * 1000) { // 5 minutes of focus
+                        vscode.window.showInformationMessage(`🎯 You're in the zone! That focused expression shows real concentration! (${Math.round(confidence * 100)}% confidence)`);
+                    }
+                    break;
+                case 'frustrated':
+                    vscode.window.showInformationMessage(`😤 I see you're frustrated. Remember, every debugging session makes you stronger! (${Math.round(confidence * 100)}% confidence)`);
+                    break;
+                case 'confused':
+                    vscode.window.showInformationMessage(`🤔 Confusion is just your brain processing new information. You've got this! (${Math.round(confidence * 100)}% confidence)`);
+                    break;
+                case 'surprised':
+                    vscode.window.showInformationMessage(`😲 Ooh! Did you just discover something amazing? I love those "aha!" moments! (${Math.round(confidence * 100)}% confidence)`);
+                    break;
+            }
+        }
+        
+        // Update emotion tracking
+        this.lastEmotionTime = Date.now();
+        this.emotionChangeCount++;
+        
+        // Track focus time
+        if (emotion === 'focused') {
+            this.focusTime += 5000; // Add 5 seconds (detection interval)
+        }
     }
 
     private showBreakthroughMessage(): void {
