@@ -34,6 +34,16 @@
         "command": "coding-buddy-bot.showBot",
         "title": "Show Bot Interface",
         "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.testWebcam",
+        "title": "Test Webcam",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.openFrameDirectory",
+        "title": "Open Frame Directory",
+        "category": "Coding Buddy"
       }
     ],
     "statusBar": {
@@ -58,12 +68,15 @@
     "dev": "npm run compile && code ."
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
     "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "eslint": "^8.26.0",
     "typescript": "^4.8.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@vladmandic/face-api": "^1.7.15",
+    "node-webcam": "^0.8.2"
+  }
 }

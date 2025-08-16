@@ -42,7 +42,39 @@ export function activate(context: vscode.ExtensionContext) {
         botInterface.showBot();
     });
 
-    context.subscriptions.push(startSession, stopSession, toggleCamera, showBot);
+    let testWebcam = vscode.commands.registerCommand('coding-buddy-bot.testWebcam', async () => {
+        try {
+            const { WebcamManager } = await import('./webcamManager');
+            const webcamManager = WebcamManager.getInstance();
+            
+            vscode.window.showInformationMessage('🔍 Testing webcam access...');
+            
+            const hasPermission = await webcamManager.initialize();
+            if (!hasPermission) {
+                vscode.window.showErrorMessage('❌ Webcam permission not granted');
+                return;
+            }
+
+            const webcamWorks = await webcamManager.testWebcam();
+            if (webcamWorks) {
+                vscode.window.showInformationMessage('✅ Webcam test successful! Camera is working properly.');
+            } else {
+                vscode.window.showErrorMessage('❌ Webcam test failed. Please check your camera connection.');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Webcam test failed: ${error}`);
+        }
+    });
+
+    let openFrameDirectory = vscode.commands.registerCommand('coding-buddy-bot.openFrameDirectory', () => {
+        if (codingBuddyBot) {
+            codingBuddyBot.getEmotionDetector().openTempDirectory();
+        } else {
+            vscode.window.showWarningMessage('Please start a coding session first!');
+        }
+    });
+
+    context.subscriptions.push(startSession, stopSession, toggleCamera, showBot, testWebcam, openFrameDirectory);
 
     // Set initial status
     statusBarManager.updateStatus('🔴 Inactive');

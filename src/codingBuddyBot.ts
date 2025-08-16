@@ -82,6 +82,10 @@ export class CodingBuddyBot {
         return this.isCameraActive;
     }
 
+    public getEmotionDetector(): EmotionDetector {
+        return this.emotionDetector;
+    }
+
     private async startEmotionDetection(): Promise<void> {
         if (!this.isCameraActive) {
             return;
