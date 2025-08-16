@@ -34,22 +34,12 @@ export class StatusBarManager {
                 this.statusBarItem.tooltip = 'Coding Buddy Bot is inactive. Click to show the bot interface!';
                 this.isActive = false;
                 break;
-            case '📹 Camera On':
-                this.statusBarItem.tooltip = 'Camera is active! Click to show the bot interface!';
-                break;
-            case '📹 Camera Off':
-                this.statusBarItem.tooltip = 'Camera is off. Click to show the bot interface!';
-                break;
             default:
                 this.statusBarItem.tooltip = 'Click to show the Coding Buddy Bot interface!';
         }
 
-        // Update command based on status
-        if (this.isActive) {
-            this.statusBarItem.command = 'coding-buddy-bot.showBot';
-        } else {
-            this.statusBarItem.command = 'coding-buddy-bot.showBot';
-        }
+        // Always show bot interface when clicked
+        this.statusBarItem.command = 'coding-buddy-bot.showBot';
     }
 
     public showSessionInfo(sessionDuration: number, breakthroughCount: number): void {
