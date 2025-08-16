@@ -3,6 +3,10 @@
   "displayName": "Coding Buddy Bot",
   "description": "A tiny bot that tracks your coding sessions and provides motivational feedback using computer vision",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ParthB21/VSCODE-extension-cursor"
+  },
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -26,28 +30,8 @@
         "category": "Coding Buddy"
       },
       {
-        "command": "coding-buddy-bot.toggleCamera",
-        "title": "Toggle Camera",
-        "category": "Coding Buddy"
-      },
-      {
         "command": "coding-buddy-bot.showBot",
         "title": "Show Bot Interface",
-        "category": "Coding Buddy"
-      },
-      {
-        "command": "coding-buddy-bot.testWebcam",
-        "title": "Test Webcam",
-        "category": "Coding Buddy"
-      },
-      {
-        "command": "coding-buddy-bot.openFrameDirectory",
-        "title": "Open Frame Directory",
-        "category": "Coding Buddy"
-      },
-      {
-        "command": "coding-buddy-bot.captureFrame",
-        "title": "Capture Frame & Detect Emotion",
         "category": "Coding Buddy"
       }
     ],
@@ -73,15 +57,12 @@
     "dev": "npm run compile && code ."
   },
   "devDependencies": {
-    "@types/node": "16.x",
     "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "eslint": "^8.26.0",
     "typescript": "^4.8.4"
   },
-  "dependencies": {
-    "@vladmandic/face-api": "^1.7.15",
-    "node-webcam": "^0.8.2"
-  }
+  "dependencies": {}
 }
