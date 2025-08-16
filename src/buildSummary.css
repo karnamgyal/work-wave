@@ -57,7 +57,9 @@ body::before {
 }
 
 /* Removed rotating scan ring behind avatar */
-.summary-avatar::after { display: none; }
+.summary-avatar::after {
+  display: none;
+}
 
 h1 {
   font-family: "Orbitron", monospace;
@@ -370,9 +372,21 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.05);
 }
-.badge.green { color: #00e676; border-color: rgba(0, 230, 118, 0.4); box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); }
-.badge.yellow { color: #ffeb3b; border-color: rgba(255, 235, 59, 0.4); box-shadow: 0 0 10px rgba(255, 235, 59, 0.3); }
-.badge.red { color: #ff5252; border-color: rgba(255, 82, 82, 0.4); box-shadow: 0 0 10px rgba(255, 82, 82, 0.3); }
+.badge.green {
+  color: #00e676;
+  border-color: rgba(0, 230, 118, 0.4);
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+.badge.yellow {
+  color: #ffeb3b;
+  border-color: rgba(255, 235, 59, 0.4);
+  box-shadow: 0 0 10px rgba(255, 235, 59, 0.3);
+}
+.badge.red {
+  color: #ff5252;
+  border-color: rgba(255, 82, 82, 0.4);
+  box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
+}
 
 /* Animations */
 @keyframes float {

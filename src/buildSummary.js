@@ -71,14 +71,15 @@
     // Hide loading overlay
     overlay.style.display = "none";
 
-  // Parse and render only the actual response content (no labels)
-  const cleaned = cleanGeminiText(text);
-  renderCleanResult(cleaned);
+    // Parse and render only the actual response content (no labels)
+    const cleaned = cleanGeminiText(text);
+    renderCleanResult(cleaned);
     resultSection.style.display = "block";
 
     // Extract verdict from the Gemini response (e.g., "Verdict: Accurate")
     try {
-      const match = /Verdict:\s*(Accurate|Partially\s+Accurate|Inaccurate)/i.exec(text);
+      const match =
+        /Verdict:\s*(Accurate|Partially\s+Accurate|Inaccurate)/i.exec(text);
       if (match && verdictBadge) {
         const verdict = match[1].toLowerCase();
         verdictBadge.style.display = "inline-block";
@@ -111,8 +112,10 @@
 
   // Extracts verdict, rationale, and hint; returns object
   function parseGeminiText(raw) {
-    const verdictMatch = /Verdict:\s*(Accurate|Partially\s+Accurate|Inaccurate)/i.exec(raw);
-    const rationaleMatch = /Rationale\s*:\s*([\s\S]*?)(?=(?:\bHint\s*:|$))/i.exec(raw);
+    const verdictMatch =
+      /Verdict:\s*(Accurate|Partially\s+Accurate|Inaccurate)/i.exec(raw);
+    const rationaleMatch =
+      /Rationale\s*:\s*([\s\S]*?)(?=(?:\bHint\s*:|$))/i.exec(raw);
     const hintMatch = /Hint\s*:\s*([\s\S]*?)$/i.exec(raw);
     return {
       verdict: verdictMatch ? verdictMatch[1].trim() : undefined,
