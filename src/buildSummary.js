@@ -7,6 +7,7 @@
   const summaryTextarea = document.getElementById("summary");
   const resultSection = document.getElementById("result");
   const resultContent = document.querySelector(".result-content");
+  const verdictBadge = document.getElementById("verdict-badge");
   const overlay = document.getElementById("overlay");
   const truncationNotice = document.getElementById("truncation-notice");
 
@@ -70,9 +71,30 @@
     // Hide loading overlay
     overlay.style.display = "none";
 
-    // Show result
-    resultContent.textContent = text;
+  // Parse and render only the actual response content (no labels)
+  const cleaned = cleanGeminiText(text);
+  renderCleanResult(cleaned);
     resultSection.style.display = "block";
+
+    // Extract verdict from the Gemini response (e.g., "Verdict: Accurate")
+    try {
+      const match = /Verdict:\s*(Accurate|Partially\s+Accurate|Inaccurate)/i.exec(text);
+      if (match && verdictBadge) {
+        const verdict = match[1].toLowerCase();
+        verdictBadge.style.display = "inline-block";
+        verdictBadge.classList.remove("green", "yellow", "red");
+        if (verdict.includes("inaccurate")) {
+          verdictBadge.classList.add("red");
+          verdictBadge.textContent = "Inaccurate";
+        } else if (verdict.includes("partially")) {
+          verdictBadge.classList.add("yellow");
+          verdictBadge.textContent = "Partially Accurate";
+        } else {
+          verdictBadge.classList.add("green");
+          verdictBadge.textContent = "Accurate";
+        }
+      }
+    } catch {}
 
     // Show close button
     closeBtn.style.display = "inline-block";
@@ -85,5 +107,67 @@
 
   function handleLoading(loading) {
     overlay.style.display = loading ? "flex" : "none";
+  }
+
+  // Extracts verdict, rationale, and hint; returns object
+  function parseGeminiText(raw) {
+    const verdictMatch = /Verdict:\s*(Accurate|Partially\s+Accurate|Inaccurate)/i.exec(raw);
+    const rationaleMatch = /Rationale\s*:\s*([\s\S]*?)(?=(?:\bHint\s*:|$))/i.exec(raw);
+    const hintMatch = /Hint\s*:\s*([\s\S]*?)$/i.exec(raw);
+    return {
+      verdict: verdictMatch ? verdictMatch[1].trim() : undefined,
+      rationale: rationaleMatch ? rationaleMatch[1].trim() : undefined,
+      hint: hintMatch ? hintMatch[1].trim() : undefined,
+    };
+  }
+
+  // Removes labels and returns minimal content for display
+  function cleanGeminiText(raw) {
+    const { verdict, rationale, hint } = parseGeminiText(raw);
+    // Update badge if we didn't earlier
+    if (verdict && verdictBadge && verdictBadge.style.display === "none") {
+      const v = verdict.toLowerCase();
+      verdictBadge.style.display = "inline-block";
+      verdictBadge.classList.remove("green", "yellow", "red");
+      if (v.includes("inaccurate")) {
+        verdictBadge.classList.add("red");
+        verdictBadge.textContent = "Inaccurate";
+      } else if (v.includes("partially")) {
+        verdictBadge.classList.add("yellow");
+        verdictBadge.textContent = "Partially Accurate";
+      } else {
+        verdictBadge.classList.add("green");
+        verdictBadge.textContent = "Accurate";
+      }
+    }
+    return { rationale, hint, fallback: raw };
+  }
+
+  function renderCleanResult({ rationale, hint, fallback }) {
+    // Clear existing content
+    resultContent.innerHTML = "";
+    let rendered = false;
+    if (rationale && rationale.length > 0) {
+      const p = document.createElement("p");
+      p.textContent = rationale;
+      resultContent.appendChild(p);
+      rendered = true;
+    }
+    if (hint && hint.length > 0) {
+      const p = document.createElement("p");
+      p.textContent = hint;
+      resultContent.appendChild(p);
+      rendered = true;
+    }
+    if (!rendered) {
+      // As a fallback, strip labels inline and show what remains
+      const stripped = fallback
+        .replace(/Verdict\s*:[^\n]*/gi, "")
+        .replace(/Rationale\s*:\s*/gi, "")
+        .replace(/Hint\s*:\s*/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      resultContent.textContent = stripped || fallback;
+    }
   }
 })();

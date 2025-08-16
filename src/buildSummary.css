@@ -51,25 +51,13 @@ body::before {
 .summary-avatar {
   font-size: 120px;
   margin: 20px 0;
-  animation: float 3s ease-in-out infinite,
-    glow 2s ease-in-out infinite alternate;
+  /* Removed float/glow animations to stop halo/pulse */
   filter: drop-shadow(0 0 20px #00ffff);
   position: relative;
 }
 
-.summary-avatar::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120%;
-  height: 120%;
-  border: 2px solid rgba(0, 255, 255, 0.3);
-  border-radius: 50%;
-  animation: scan 4s linear infinite;
-  pointer-events: none;
-}
+/* Removed rotating scan ring behind avatar */
+.summary-avatar::after { display: none; }
 
 h1 {
   font-family: "Orbitron", monospace;
@@ -299,6 +287,7 @@ h1 {
   margin-top: 15px;
   border: 1px solid rgba(0, 255, 255, 0.2);
   overflow-x: auto;
+  text-align: left; /* Ensure left-aligned content */
 }
 
 .code {
@@ -307,6 +296,7 @@ h1 {
   line-height: 1.5;
   color: #00ffff;
   white-space: pre;
+  text-align: left; /* Left-align code text explicitly */
 }
 
 .truncation-notice {
@@ -367,6 +357,23 @@ h1 {
   letter-spacing: 1px;
 }
 
+/* Verdict badge styles */
+.badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+.badge.green { color: #00e676; border-color: rgba(0, 230, 118, 0.4); box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); }
+.badge.yellow { color: #ffeb3b; border-color: rgba(255, 235, 59, 0.4); box-shadow: 0 0 10px rgba(255, 235, 59, 0.3); }
+.badge.red { color: #ff5252; border-color: rgba(255, 82, 82, 0.4); box-shadow: 0 0 10px rgba(255, 82, 82, 0.3); }
+
 /* Animations */
 @keyframes float {
   0%,
@@ -378,23 +385,11 @@ h1 {
   }
 }
 
-@keyframes glow {
-  0% {
-    filter: drop-shadow(0 0 20px #00ffff);
-  }
-  100% {
-    filter: drop-shadow(0 0 30px #00ffff) drop-shadow(0 0 40px #00ffff);
-  }
-}
+/* glow animation no longer used */
+/* @keyframes glow { } */
 
-@keyframes scan {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
+/* scan animation no longer used */
+/* @keyframes scan { } */
 
 @keyframes textGlow {
   0% {
@@ -415,21 +410,8 @@ h1 {
   }
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
-}
-
-.pulse {
-  animation: pulse 2s infinite;
-}
+/* Removed pulse animation */
+/* .pulse { animation: pulse 2s infinite; } */
 
 /* Responsive Design */
 @media (max-width: 768px) {

@@ -183,7 +183,8 @@ export class BuildSummaryPanel {
 
       // Embed CSS and JS directly (for simplicity and CSP compliance)
       // Handle possible self-closing link tag variations
-      const cssLinkRegex = /<link\s+rel=["']stylesheet["']\s+href=["']buildSummary\.css["']\s*\/?>(?:\s*)/i;
+      const cssLinkRegex =
+        /<link\s+rel=["']stylesheet["']\s+href=["']buildSummary\.css["']\s*\/?>(?:\s*)/i;
       if (cssLinkRegex.test(html)) {
         html = html.replace(cssLinkRegex, `<style>${css}</style>`);
       } else {
@@ -192,7 +193,8 @@ export class BuildSummaryPanel {
       }
 
       // Replace script tag or inject before </body>
-      const jsScriptRegex = /<script\s+src=["']buildSummary\.js["']><\/script>/i;
+      const jsScriptRegex =
+        /<script\s+src=["']buildSummary\.js["']><\/script>/i;
       if (jsScriptRegex.test(html)) {
         html = html.replace(jsScriptRegex, `<script>${js}</script>`);
       } else {
