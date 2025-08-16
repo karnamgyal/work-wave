@@ -129,9 +129,9 @@ export class WebcamManager {
         try {
             const NodeWebcam = require('node-webcam');
             const options = {
-                width: 320,
-                height: 240,
-                quality: 70,  // Reduced for smaller file size
+                width: 160,  // Further reduced for smaller file size
+                height: 120, // Further reduced for smaller file size
+                quality: 50,  // Further reduced for smaller file size
                 delay: 0,
                 saveShots: true,
                 output: 'jpeg',

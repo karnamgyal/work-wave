@@ -3,6 +3,7 @@ import NodeWebcam from 'node-webcam';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import sharp from 'sharp';
 import { WebcamManager } from './webcamManager';
 import { RoboflowEmotionDetector } from './roboflowEmotionDetector';
 
@@ -128,9 +129,9 @@ export class EmotionDetector {
             try {
                 // Configure webcam options (cross-platform, optimized for API limits)
                 const options = {
-                    width: 320,  // Reduced from 640 for smaller file size
-                    height: 240, // Reduced from 480 for smaller file size
-                    quality: 70,  // Reduced from 100 for smaller file size
+                    width: 160,  // Further reduced for smaller file size
+                    height: 120, // Further reduced for smaller file size
+                    quality: 50,  // Further reduced for smaller file size
                     delay: 0,
                     saveShots: true,
                     output: 'jpeg',
@@ -214,16 +215,35 @@ export class EmotionDetector {
                     const fileStats = fs.statSync(tempFilePath);
                     console.log(`🔍 Debug: Captured file size: ${fileStats.size} bytes`);
                     
-                    // Check if file is too large for Roboflow API (limit is ~10MB)
-                    const maxFileSize = 8 * 1024 * 1024; // 8MB limit
-                    if (fileStats.size > maxFileSize) {
-                        console.error(`❌ ERROR: File too large (${fileStats.size} bytes) for Roboflow API. Max size: ${maxFileSize} bytes`);
-                        reject(new Error(`Captured image too large (${Math.round(fileStats.size / 1024 / 1024)}MB). Try reducing webcam quality.`));
-                        return;
-                    }
+                    // Read the captured file as buffer
+                    let imageBuffer = fs.readFileSync(tempFilePath);
                     
-                    // Read the captured file as buffer (tempFilePath is already defined above)
-                    const imageBuffer = fs.readFileSync(tempFilePath);
+                    // Check if file is too large and compress if needed
+                    const maxFileSize = 5 * 1024 * 1024; // 5MB limit
+                    if (fileStats.size > maxFileSize) {
+                        console.log(`📦 Compressing image from ${Math.round(fileStats.size / 1024 / 1024)}MB...`);
+                        
+                        try {
+                            // Compress the image using sharp
+                            imageBuffer = await sharp(imageBuffer)
+                                .resize(160, 120) // Force resize to small dimensions
+                                .jpeg({ quality: 30 }) // Very low quality for small file size
+                                .toBuffer();
+                            
+                            console.log(`✅ Image compressed to ${Math.round(imageBuffer.length / 1024 / 1024)}MB`);
+                            
+                            // Check if compressed image is still too large
+                            if (imageBuffer.length > maxFileSize) {
+                                console.error(`❌ ERROR: Compressed image still too large (${imageBuffer.length} bytes) for Roboflow API`);
+                                reject(new Error(`Image compression failed - file still too large (${Math.round(imageBuffer.length / 1024 / 1024)}MB)`));
+                                return;
+                            }
+                        } catch (compressError) {
+                            console.error('❌ Image compression failed:', compressError);
+                            reject(new Error('Failed to compress image for API upload'));
+                            return;
+                        }
+                    }
                     
                     // Clean up the temporary capture file
                     fs.unlinkSync(tempFilePath);
