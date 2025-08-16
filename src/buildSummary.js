@@ -4,6 +4,7 @@
   // DOM elements
   const submitBtn = document.getElementById("submitBtn");
   const closeBtn = document.getElementById("closeBtn");
+  const retryBtn = document.getElementById("retryBtn");
   const summaryTextarea = document.getElementById("summary");
   const resultSection = document.getElementById("result");
   const resultContent = document.querySelector(".result-content");
@@ -35,6 +36,16 @@
       type: "close-panel",
     });
   });
+
+  // Handle retry button click: re-enable form and allow resubmission
+  if (retryBtn) {
+    retryBtn.addEventListener("click", () => {
+      overlay.style.display = "none";
+      resultSection.style.display = "none";
+      submitBtn.disabled = false;
+      summaryTextarea.focus();
+    });
+  }
 
   // Handle messages from extension
   window.addEventListener("message", (event) => {
@@ -87,12 +98,15 @@
         if (verdict.includes("inaccurate")) {
           verdictBadge.classList.add("red");
           verdictBadge.textContent = "Inaccurate";
+          if (retryBtn) retryBtn.style.display = "inline-block";
         } else if (verdict.includes("partially")) {
           verdictBadge.classList.add("yellow");
           verdictBadge.textContent = "Partially Accurate";
+          if (retryBtn) retryBtn.style.display = "inline-block";
         } else {
           verdictBadge.classList.add("green");
           verdictBadge.textContent = "Accurate";
+          if (retryBtn) retryBtn.style.display = "none";
         }
       }
     } catch {}

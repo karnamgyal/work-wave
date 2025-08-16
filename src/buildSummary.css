@@ -170,6 +170,12 @@ h1 {
   box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn:hover {
   background: linear-gradient(
     45deg,
