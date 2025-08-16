@@ -16,6 +16,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize the coding buddy bot
   codingBuddyBot = new CodingBuddyBot();
 
+  // init status bar badge button
+  codingBuddyBot.initUI(context);
+
   // Initialize status bar manager
   statusBarManager = new StatusBarManager();
 
@@ -71,12 +74,13 @@ export function activate(context: vscode.ExtensionContext) {
   let sessionTimer: NodeJS.Timeout | undefined;
   let sessionStartTime: number = 0;
 
-  // In extension.ts, update your command handlers:
-
-  // In your startSession command:
-  let startSession = vscode.commands.registerCommand(
+  // Start Session
+  const startSession = vscode.commands.registerCommand(
     "coding-buddy-bot.startSession",
     () => {
+      // 👇 test interval ONLY when session starts (remove/change later)
+      codingBuddyBot.setBadgeIntervalMinutes(0.5); // ~6 seconds for testing
+
       codingBuddyBot.startSession();
       statusBarManager.updateStatus("🟢 Active");
       vscode.window.showInformationMessage(
@@ -86,7 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       // Start timer and water reminders
       botInterface.startTimer();
-      botInterface.startWaterReminder(); // Add this line
+      botInterface.startWaterReminder();
 
       // Start timer to update bot interface every second
       if (sessionTimer) clearInterval(sessionTimer);
@@ -94,15 +98,15 @@ export function activate(context: vscode.ExtensionContext) {
         const elapsed = Date.now() - sessionStartTime;
         botInterface.updateSessionStats(
           elapsed,
-          codingBuddyBot["breakthroughCount"] || 0,
-          codingBuddyBot["focusTime"] || 0
+          (codingBuddyBot as any)["breakthroughCount"] || 0,
+          (codingBuddyBot as any)["focusTime"] || 0
         );
       }, 1000);
     }
   );
 
-  // In your stopSession command:
-  let stopSession = vscode.commands.registerCommand(
+  // Stop Session
+  const stopSession = vscode.commands.registerCommand(
     "coding-buddy-bot.stopSession",
     () => {
       codingBuddyBot.stopSession();
@@ -113,7 +117,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       // Stop timer and water reminders
       botInterface.stopTimer();
-      botInterface.stopWaterReminder(); // Add this line
+      botInterface.stopWaterReminder();
 
       if (sessionTimer) {
         clearInterval(sessionTimer);
@@ -123,57 +127,73 @@ export function activate(context: vscode.ExtensionContext) {
       const elapsed = Date.now() - sessionStartTime;
       botInterface.updateSessionStats(
         elapsed,
-        codingBuddyBot["breakthroughCount"] || 0,
-        codingBuddyBot["focusTime"] || 0
+        (codingBuddyBot as any)["breakthroughCount"] || 0,
+        (codingBuddyBot as any)["focusTime"] || 0
       );
     }
   );
 
-  let showBot = vscode.commands.registerCommand(
+  const showBot = vscode.commands.registerCommand(
     "coding-buddy-bot.showBot",
     () => {
       botInterface.showBot();
     }
   );
 
-  let toggleCamera = vscode.commands.registerCommand(
+  const toggleCamera = vscode.commands.registerCommand(
     "coding-buddy-bot.toggleCamera",
     async () => {
       await codingBuddyBot.toggleCamera();
     }
   );
 
-  let testWebcam = vscode.commands.registerCommand(
+  const testWebcam = vscode.commands.registerCommand(
     "coding-buddy-bot.testWebcam",
     async () => {
       await codingBuddyBot.testWebcam();
     }
   );
 
-  let openFrameDirectory = vscode.commands.registerCommand(
+  const openFrameDirectory = vscode.commands.registerCommand(
     "coding-buddy-bot.openFrameDirectory",
     async () => {
       await codingBuddyBot.openFrameDirectory();
     }
   );
 
-  let captureFrame = vscode.commands.registerCommand(
+  const captureFrame = vscode.commands.registerCommand(
     "coding-buddy-bot.captureFrame",
     async () => {
       await codingBuddyBot.captureFrame();
     }
   );
 
-  context.subscriptions.push(startSession, stopSession, showBot, toggleCamera, testWebcam, openFrameDirectory, captureFrame);
+  // badge history commands (status bar button calls Quick Pick)
+  const showBadgeQuickPick = vscode.commands.registerCommand(
+    "coding-buddy-bot.showBadgeQuickPick",
+    () => codingBuddyBot.showBadgeHistoryQuickPick()
+  );
+  const showBadgeOutput = vscode.commands.registerCommand(
+    "coding-buddy-bot.showBadgeOutput",
+    () => codingBuddyBot.showBadgeHistoryOutput()
+  );
 
-  // Removed: AI suggestion tracking test commands
-
-  // bulkMonitor already set up above
+  context.subscriptions.push(
+    startSession,
+    stopSession,
+    showBot,
+    toggleCamera,
+    testWebcam,
+    openFrameDirectory,
+    captureFrame,
+    showBadgeQuickPick,
+    showBadgeOutput
+  );
 
   // Set initial status
   statusBarManager.updateStatus("🔴 Inactive");
 
-  // Start health reminder timer
+  // Start health reminder timers
   startHealthReminders();
 }
 
@@ -182,8 +202,6 @@ export function deactivate() {
     codingBuddyBot.stopSession();
   }
 }
-
-// ...existing code...
 
 function startHealthReminders() {
   // Remind to take breaks every 50 minutes

@@ -10,7 +10,16 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:coding-buddy-bot.startSession",
+    "onCommand:coding-buddy-bot.stopSession",
+    "onCommand:coding-buddy-bot.toggleCamera",
+    "onCommand:coding-buddy-bot.showBot",
+    "onCommand:coding-buddy-bot.testWebcam",
+    "onCommand:coding-buddy-bot.openFrameDirectory",
+    "onCommand:coding-buddy-bot.captureFrame",
+    "onCommand:coding-buddy-bot.showBadgeQuickPick",
+    "onCommand:coding-buddy-bot.showBadgeOutput"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -49,8 +58,29 @@
         "command": "coding-buddy-bot.captureFrame",
         "title": "Capture Frame & Detect Emotion",
         "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.showBadgeQuickPick",
+        "title": "Coding Buddy: Show Badges (Quick Pick)",
+        "category": "Coding Buddy"
+      },
+      {
+        "command": "coding-buddy-bot.showBadgeOutput",
+        "title": "Coding Buddy: Show Badges (Output)",
+        "category": "Coding Buddy"
       }
     ],
+    "configuration": {
+      "title": "Coding Buddy",
+      "properties": {
+        "codingBuddy.badgeIntervalMinutes": {
+          "type": "number",
+          "default": 60,
+          "minimum": 1,
+          "description": "Minutes of an active session required to earn each time badge."
+        }
+      }
+    },
     "statusBar": {
       "items": [
         {
